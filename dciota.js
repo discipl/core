@@ -1,7 +1,8 @@
+var CryptoJS = require('crypto-js');
+var Mam = require('./node_modules/mam.client.js/lib/mam.node.js');
+var IOTA = require('iota.lib.js');
 
-// Todo make this a proper NodeJS module
-
-function DCIOTA() {
+const DCIOTA = function DCIOTA() {
 
   this.iota = new IOTA({ provider: iotanode });
   this.mamState = null;
@@ -14,7 +15,7 @@ function DCIOTA() {
     return 'did:discipl:iota'+Mam.getRoot(this.mamstate);
   }
 
-  this.claim = function (obj, pkey) {
+  this.claim = async function (obj, pkey) {
     var did = this.getDid(pkey);
     // Todo: add did as subject if non existent otherwise check subject equals did
     var trytes = iota.utils.toTrytes(JSON.stringify(obj));
@@ -24,12 +25,12 @@ function DCIOTA() {
     return message.root;
   }
 
-  this.attest = function (obj, pkey, hashkey) {
+  this.attest = async function (obj, pkey, hashkey) {
     // Todo add did as subject (the attestor making the attestation claim)
     return this.claim(CryptoJS.HmacSHA384(obj,hashkey),pkey);
   }
 
-  this.verify = function (obj, attestor_did, hashkey) {
+  this.verify = async function (obj, attestor_did, hashkey) {
     var hash = CryptoJS.HmacSHA384(obj,hashkey);
     var attestation = this.getByReference(obj, attestor_did);
     return hash == attestation;
@@ -37,7 +38,7 @@ function DCIOTA() {
 
   //this.revoke
 
-  this.getByReference = function (ref, did) {
+  this.getByReference = async function (ref, did) {
     var obj = null;
     await Mam.fetch(ref, 'public', null, function (data) {
       msg = JSON.parse(iota.utils.fromTrytes(data));
@@ -46,3 +47,5 @@ function DCIOTA() {
   }
 
 }
+
+module.exports = {DCIOTA : DCIOTA}

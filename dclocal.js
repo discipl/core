@@ -1,7 +1,6 @@
+var CryptoJS = require('crypto-js');
 
-// Todo make this a proper NodeJS module
-
-function DCLOCAL() {
+const DCLOCAL = function DCLOCAL() {
 
   this.storeData = new Array();
 
@@ -30,8 +29,12 @@ function DCLOCAL() {
     return hash == attestation;
   }
 
+  // this.revoke
+
   this.getByReference = function (ref, did) {
     return this.storeData[did][ref];
   }
 
 }
+
+module.exports = {DCLOCAL : DCLOCAL}
