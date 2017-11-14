@@ -1,0 +1,12 @@
+{
+  "name": "discipl-core",
+  "version": "0.1.0",
+  "description": "Discipl Core API",
+  "main": "index.js",
+  "repository": "https://github.com/discipl/core",
+  "author": "Bas Kaptijn",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "mam.client.js": "https://github.com/l3wi/mam.client.js"
+  }
+}
