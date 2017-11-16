@@ -1,51 +1,65 @@
 var CryptoJS = require('crypto-js');
-var Mam = require('./node_modules/mam.client.js/lib/mam.node.js');
+var Mam = require('../mam.client.js/lib/mam.node.js');
 var IOTA = require('iota.lib.js');
 
-const DCIOTA = function DCIOTA() {
+var iota = null;
+var mamState = null;
 
-  this.iota = new IOTA({ provider: iotanode });
-  this.mamState = null;
+const setIOTANode = (iotaNodeUrl) => {
+    iota = new IOTA({ provider: iotaNodeUrl });
+}
 
-  this.getDid = function (pkey) {
+const getDid = (pkey) => {
+    if(iota == null) {
+      throw "Discipl Core - IOTA binding : no IOTA node is set to connect to";
+    }
     // check channel existence and if it does not exist, create it
     if(mamState == null || mamState.seed != pkey)  {
-      this.mamstate = Mam.init(this.iota, pkey, 2);
+      if(pkey.length != 81) {
+        throw "Discipl Core - IOTA binding : private key must be a valid IOTA seed";
+      }
+      mamState = Mam.init(iota, pkey, 2);
     }
-    return 'did:discipl:iota'+Mam.getRoot(this.mamstate);
-  }
+    return 'did:discipl:iota'+Mam.getRoot(mamState);
+}
 
-  this.claim = async function (obj, pkey) {
-    var did = this.getDid(pkey);
+const claim = async (obj, pkey) => {
+    var did = getDid(pkey);
     // Todo: add did as subject if non existent otherwise check subject equals did
     var trytes = iota.utils.toTrytes(JSON.stringify(obj));
-    var message = Mam.create(this.mamstate, trytes);
-    this.mamState = message.state;
+    var message = Mam.create(mamState, trytes);
+    mamState = message.state;
     await Mam.attach(message.payload, message.address);
     return message.root;
-  }
+}
 
-  this.attest = async function (obj, pkey, hashkey) {
+const attest = async (obj, pkey, hashkey) => {
     // Todo add did as subject (the attestor making the attestation claim)
-    return this.claim(CryptoJS.HmacSHA384(obj,hashkey),pkey);
-  }
+    return claim(CryptoJS.HmacSHA384(obj,hashkey),pkey);
+}
 
-  this.verify = async function (obj, attestor_did, hashkey) {
+const verify = async (obj, attestor_did, hashkey) => {
     var hash = CryptoJS.HmacSHA384(obj,hashkey);
-    var attestation = this.getByReference(obj, attestor_did);
+    var attestation = getByReference(obj, attestor_did);
     return hash == attestation;
-  }
+}
 
   //this.revoke
 
-  this.getByReference = async function (ref, did) {
+const getByReference = async (ref, did) => {
     var obj = null;
     await Mam.fetch(ref, 'public', null, function (data) {
       msg = JSON.parse(iota.utils.fromTrytes(data));
     });
     return obj;
-  }
-
 }
 
-module.exports = {DCIOTA : DCIOTA}
+
+module.exports = {
+  setIOTANode,
+  getDid,
+  claim,
+  attest,
+  verify,
+  getByReference
+}

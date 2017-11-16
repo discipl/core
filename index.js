@@ -1,7 +1,7 @@
-const DCLOCAL = require("./dclocal.js");
-const DCIOTA = require("./dciota.js");
+const local = require("./dclocal.js");
+const iota = require("./dciota.js");
 
 module.exports = {
-  DCLOCAL,
-  DCIOTA
+  local,
+  iota
 }
