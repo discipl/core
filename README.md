@@ -21,23 +21,29 @@ yarn install
 
 this package will export the DCLOCAL and DCIOTA bindings that export a similair interface as explained (below)
 
+### `setIOTANode`
+Sets the IOTA node to connect to. Use a provider URL like: http://iota.discipl.org:14265.
+```
+setIOTANode(iotaNodeUrl)
+```
+
 ### `getDid`
-Retrieves the DID tied to the given private key in the current store
+Retrieves the DID (did.discipl...) tied to the given private key in the current store
 ```
 getDid(pkey)
 ```
 
 ### `claim`
-Stores the given (JSON-LD) claim into the (local) store using an account tied to the subject (an id) in the given linked data triples
-and secured by the given private key. All triples should be about the same subject. NB in case of IOTA the pkey is the seed
+Stores the given (JSON-LD) claim into the store using an account tied to the subject (an id) in the given linked data triples
+which has to be tied to the given private key. All triples should be about the same subject. NB in case of IOTA the pkey is the seed
 used by the subject. returns reference to the claim (an universlly unique id)
 ```
 function claim(obj, pkey)
 ```
 
 ### `attest`
-Stores an attestation of the given (JSON-LD) claim into the (public) store using a given attestor did with corresponding private key (of the attestor)
-the claim is not stored itself but only a keyed hash of it for which the gieven hashkey is used. The keys are not stored anywhere.
+Stores an attestation of the given (JSON-LD) claim into the store using a given attestor did with corresponding private key (of the attestor)
+the claim is not stored itself but only a keyed hash of it for which the given hashkey is used. The keys are not stored anywhere.
 A reference to the stored attestation is returned
 ```
 function attest(obj, pkey, hashkey)
