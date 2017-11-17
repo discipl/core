@@ -50,9 +50,9 @@ function attest(obj, pkey, hashkey)
 ```
 
 ### `verify`
-evaluates whether the store contains an attestation of the given (JSON-LD) claim attested by (one of) the given attestor(s) using the given hashkey
+evaluates whether the store contains an attestation at the address ref of the given (JSON-LD) claim attested by (one of) the given attestor(s) using the given hashkey
 ```
-function verify(obj, attestor_did, hashkey)
+function verify(ref, attestor_did, obj, hashkey)
 ```
 
 ### `revoke`

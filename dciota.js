@@ -25,7 +25,6 @@ const getDid = (pkey) => {
 
 const claim = async (obj, pkey) => {
     var did = getDid(pkey);
-    // Todo: add did as subject if non existent otherwise check subject equals did
     var trytes = iota.utils.toTrytes(JSON.stringify(obj));
     var message = Mam.create(mamState, trytes);
     mamState = message.state;
@@ -34,13 +33,13 @@ const claim = async (obj, pkey) => {
 }
 
 const attest = async (obj, pkey, hashkey) => {
-    // Todo add did as subject (the attestor making the attestation claim)
-    return claim(CryptoJS.HmacSHA384(obj,hashkey),pkey);
+    var attesthash =  CryptoJS.HmacSHA384(obj,hashkey).toString(CryptoJS.enc.latin1);
+    return claim(attesthash,pkey);
 }
 
-const verify = async (obj, attestor_did, hashkey) => {
-    var hash = CryptoJS.HmacSHA384(obj,hashkey);
-    var attestation = getByReference(obj, attestor_did);
+const verify = async (ref, attestor_did, obj, hashkey) => {
+    var hash = CryptoJS.HmacSHA384(obj,hashkey).toString(CryptoJS.enc.latin1);
+    var attestation = await getByReference(ref, attestor_did);
     return hash == attestation;
 }
 
@@ -48,8 +47,11 @@ const verify = async (obj, attestor_did, hashkey) => {
 
 const getByReference = async (ref, did) => {
     var obj = null;
+    if(mamState == null) {
+      mamState = Mam.init(iota);
+    }
     await Mam.fetch(ref, 'public', null, function (data) {
-      msg = JSON.parse(iota.utils.fromTrytes(data));
+      obj = JSON.parse(iota.utils.fromTrytes(data));
     });
     return obj;
 }

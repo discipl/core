@@ -3,7 +3,7 @@ var CryptoJS = require('crypto-js');
 var storeData = new Array();
 
 const getDid = (pkey) => {
-  return 'did:discipl:local'+CryptoJS.HmacSHA384(pkey, 'did:discipl');
+  return 'did:discipl:local'+CryptoJS.HmacSHA384(pkey, 'did:discipl').toString(CryptoJS.enc.latin1);
 }
 
 const claim = (obj, pkey) => {
@@ -18,12 +18,12 @@ const claim = (obj, pkey) => {
 
 const attest = (obj, pkey, hashkey) => {
     // Todo add did as subject (the attestor making the attestation claim)
-    return claim(CryptoJS.HmacSHA384(obj,hashkey),pkey);
+    return claim(CryptoJS.HmacSHA384(obj,hashkey).toString(CryptoJS.enc.latin1),pkey);
 }
 
-const verify = (obj, attestor_did, hashkey) => {
-    var hash = CryptoJS.HmacSHA384(obj,hashkey);
-    var attestation = getByReference(obj, attestor_did);
+const verify = (ref, attestor_did, obj, hashkey) => {
+    var hash = CryptoJS.HmacSHA384(obj,hashkey).toString(CryptoJS.enc.latin1);
+    var attestation = getByReference(ref, attestor_did);
     return hash == attestation;
 }
 
