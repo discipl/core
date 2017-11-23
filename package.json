@@ -7,6 +7,8 @@
   "author": "Bas Kaptijn",
   "license": "GPL-3.0",
   "dependencies": {
+    "crypto-js": "3.1.9-1",
+    "debug": "3.1.0",
     "mam.client.js": "https://github.com/l3wi/mam.client.js"
   }
 }
