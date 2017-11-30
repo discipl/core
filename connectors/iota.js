@@ -3,12 +3,25 @@ const Mam = require('mam.client.js/lib/mam.node.js')
 const IOTA = require('iota.lib.js')
 const fs = require('fs')
 const BaseConnector = require('./base-connector.js')
-const debug =  require('debug')('dciota');
+const debug = require('debug')('dciota');
 
 module.exports = class IotaConnector extends BaseConnector {
 
   constructor(iota) {
+    super()
     this.iota = iota
+  }
+
+  serialize(mamState) {
+    return JSON.stringify(mamState)
+  }
+
+  deserialize(mamState) {
+    return JSON.parse(mamState)
+  }
+
+  initState(initData) {
+    return Mam.init(this.iota, initData, 2)
   }
 
   getDid(mamState) {
@@ -36,16 +49,17 @@ module.exports = class IotaConnector extends BaseConnector {
   }
 
   async findRefInChannel(did, ref) {
-    var resp = { nextRoot : did.slice(16) };
-    while(resp) {
-      debug('... '+resp.nextRoot);
-      if(resp.nextRoot == ref) {
+    var resp = {
+      nextRoot: did.slice(16)
+    };
+    while (resp) {
+      debug('... ' + resp.nextRoot);
+      if (resp.nextRoot == ref) {
         return true;
       }
       try {
         resp = await Mam.fetchSingle(resp.nextRoot, 'public', null);
-      }
-      catch(e) {
+      } catch (e) {
         return false;
       };
     }

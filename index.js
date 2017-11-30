@@ -3,6 +3,18 @@ const connectors = {
 }
 Object.freeze(connectors)
 
+const serialize = (conn, state) => {
+  return conn.serialize(state)
+}
+
+const deserialize = (conn, state) => {
+  return conn.deserialize(state)
+}
+
+const initState = (conn, initData) => {
+  return conn.initState(initData)
+}
+
 const getDid = (conn, state) => {
   return conn.getDid(state)
 }
@@ -28,6 +40,9 @@ const findRefInChannel = async (conn, did, ref) => {
 }
 
 module.exports = {
+  serialize,
+  deserialize,
+  initState,
   getDid,
   claim,
   attest,

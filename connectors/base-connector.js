@@ -1,7 +1,17 @@
 module.exports = class BaseConnector {
 
   constructor() {
+
+  }
+
+  initState(initData) {
     throw new Error("BaseConnector is not meant for direct usage.")
+  }
+  
+  serialize(state) {
+  }
+
+  deserialize(state) {
   }
 
   getDid(state) {
