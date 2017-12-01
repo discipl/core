@@ -21,7 +21,8 @@ module.exports = class IotaConnector extends BaseConnector {
   }
 
   initState(initData) {
-    return Mam.init(this.iota, initData, 2)
+    var mamState = Mam.init(this.iota, initData, 2)
+    return mamState
   }
 
   getDid(mamState) {
@@ -30,8 +31,8 @@ module.exports = class IotaConnector extends BaseConnector {
   }
 
   async claim(mamState, data) {
-    var did = getDid(mamState);
-    var trytes = iota.utils.toTrytes(JSON.stringify(data));
+    var trytes = this.iota.utils.toTrytes(JSON.stringify(data));
+    console.log(mamState);
     var message = Mam.create(mamState, trytes);
     mamState = message.state;
     await Mam.attach(message.payload, message.address);
@@ -44,7 +45,7 @@ module.exports = class IotaConnector extends BaseConnector {
   async getByReference(ref) {
     var obj = null;
     var resp = await Mam.fetchSingle(ref, 'public', null);
-    obj = JSON.parse(iota.utils.fromTrytes(resp.payload));
+    obj = JSON.parse(this.iota.utils.fromTrytes(resp.payload));
     return obj;
   }
 
