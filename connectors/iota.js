@@ -10,6 +10,9 @@ module.exports = class IotaConnector extends BaseConnector {
   constructor(iota) {
     super()
     this.iota = iota
+
+    // TODO: This is suboptimal, but it's a workaround for this: https://github.com/l3wi/mam.client.js/pull/2
+    Mam.init(this.iota, '999999999999999999999999999999999999999999999999999999999999999999999999999999999', 2)
   }
 
   serialize(mamState) {
