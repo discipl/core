@@ -1,5 +1,6 @@
 const connectors = {
-  iota: require('./connectors/iota.js')
+  iota: require('./connectors/iota.js'),
+  local: require('./connectors/local.js')
 }
 Object.freeze(connectors)
 
