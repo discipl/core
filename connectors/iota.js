@@ -1,18 +1,16 @@
 const CryptoJS = require('crypto-js')
-const Mam = require('mam.client.js/lib/mam.node.js')
-const IOTA = require('iota.lib.js')
-const fs = require('fs')
 const BaseConnector = require('./base-connector.js')
 const debug = require('debug')('dciota');
 
 module.exports = class IotaConnector extends BaseConnector {
 
-  constructor(iota) {
+  constructor(Mam, iota) {
     super()
+    this.Mam = Mam
     this.iota = iota
 
     // TODO: This is suboptimal, but it's a workaround for this: https://github.com/l3wi/mam.client.js/pull/2
-    Mam.init(this.iota, '999999999999999999999999999999999999999999999999999999999999999999999999999999999', 2)
+    this.Mam.init(this.iota, '999999999999999999999999999999999999999999999999999999999999999999999999999999999', 2)
   }
 
   serialize(mamState) {
@@ -24,21 +22,21 @@ module.exports = class IotaConnector extends BaseConnector {
   }
 
   initState(initData) {
-    var mamState = Mam.init(this.iota, initData, 2)
+    var mamState = this.Mam.init(this.iota, initData, 2)
     return mamState
   }
 
   getDid(mamState) {
-    var root = Mam.getRoot(mamState);
+    var root = this.Mam.getRoot(mamState);
     return 'did:discipl:iota' + root;
   }
 
   async claim(mamState, data) {
     var trytes = this.iota.utils.toTrytes(JSON.stringify(data));
     console.log(mamState);
-    var message = Mam.create(mamState, trytes);
+    var message = this.Mam.create(mamState, trytes);
     mamState = message.state;
-    await Mam.attach(message.payload, message.address);
+    await this.Mam.attach(message.payload, message.address);
     return {
       mamState,
       root: message.root
@@ -47,7 +45,7 @@ module.exports = class IotaConnector extends BaseConnector {
 
   async getByReference(ref) {
     var obj = null;
-    var resp = await Mam.fetchSingle(ref, 'public', null);
+    var resp = await this.Mam.fetchSingle(ref, 'public', null);
     obj = JSON.parse(this.iota.utils.fromTrytes(resp.payload));
     return obj;
   }
@@ -62,7 +60,7 @@ module.exports = class IotaConnector extends BaseConnector {
         return true;
       }
       try {
-        resp = await Mam.fetchSingle(resp.nextRoot, 'public', null);
+        resp = await this.Mam.fetchSingle(resp.nextRoot, 'public', null);
       } catch (e) {
         return false;
       };
