@@ -1,8 +1,9 @@
-var CryptoJS = require('crypto-js');
+const CryptoJS = require('crypto-js');
+const BaseConnector = require('./base-connector.js')
 
 module.exports = class LocalConnector extends BaseConnector {
 
-  constructor(iota) {
+  constructor() {
     super()
   }
 
@@ -23,7 +24,7 @@ module.exports = class LocalConnector extends BaseConnector {
   }
 
   async claim(obj, pkey) {
-    var did = getDid(pkey);
+    var did = this.getDid(pkey);
     if(!this.storeData[did]) {
       this.storeData[did] = new Array();
     }

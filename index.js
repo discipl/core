@@ -20,7 +20,7 @@ const getDid = (conn, state) => {
   return conn.getDid(state)
 }
 
-const claim = async (state, data) => {
+const claim = async (conn, state, data) => {
   return conn.claim(state, data)
 }
 
