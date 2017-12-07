@@ -32,8 +32,7 @@ module.exports = class IotaConnector extends BaseConnector {
   }
 
   async claim(mamState, data) {
-    var trytes = this.iota.utils.toTrytes(JSON.stringify(data));
-    console.log(mamState);
+    var trytes = this.iota.utils.toTrytes(data);
     var message = this.Mam.create(mamState, trytes);
     mamState = message.state;
     await this.Mam.attach(message.payload, message.address);
@@ -43,16 +42,17 @@ module.exports = class IotaConnector extends BaseConnector {
     };
   }
 
-  async getByReference(ref) {
+  async getByReference(did) {
+    var ref = did.slice(16)
     var obj = null;
     var resp = await this.Mam.fetchSingle(ref, 'public', null);
-    obj = JSON.parse(this.iota.utils.fromTrytes(resp.payload));
-    return obj;
+    return this.iota.utils.fromTrytes(resp.payload);
   }
 
-  async findRefInChannel(did, ref) {
+  async findRefInChannel(did) {
+    var ref = did.slice(16)
     var resp = {
-      nextRoot: did.slice(16)
+      nextRoot: ref
     };
     while (resp) {
       debug('... ' + resp.nextRoot);
@@ -70,18 +70,17 @@ module.exports = class IotaConnector extends BaseConnector {
 
   attest(mamState, data, hashKey) {
     var attesthash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashKey))
-    return this.claim(mamState, data)
+    return this.claim(mamState, hashKey)
   }
 
   async verify(ref, attestorDid, data, hashKey) {
-    debug('obj: ' + data + ' ' + data.length);
-    debug('obj: ' + hashKey + ' ' + hashKey.length);
-    var hash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashKey));
-    var attestation = await getByReference(ref, attestorDid);
-    debug(hash + ' == ' + attestation);
-    var found = await findRefInChannel(attestorDid, ref);
+    console.log('obj: ' + data + ' ' + data.length);
+    console.log('hashKey: ' + hashKey + ' ' + hashKey.length);
+    var attestation = await this.getByReference(attestorDid);
+    console.log(hashKey + ' == ' + attestation);
+    var found = await this.findRefInChannel(attestorDid);
     debug('Found in attestor channel: ' + found);
-    return found && (hash == attestation);
+    return found && (hashKey === attestation);
   }
 
 }
