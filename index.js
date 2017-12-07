@@ -21,23 +21,23 @@ const getDid = (conn, state) => {
 }
 
 const claim = async (conn, state, data) => {
-  return conn.claim(state, data)
+  return await conn.claim(state, data)
 }
 
 const attest = async (conn, state, data, hashKey) => {
   return conn.attest(state, data, hashKey)
 }
 
-const verify = async (conn, state, data, hashKey, attestorDid) => {
-  return conn.verify(state, data, hashKey, attestorDid)
+const verify = async (conn, ref, attestorDid, data, hashKey) => {
+  return await conn.verify(ref, attestorDid, data, hashKey)
 }
 
 const getByReference = async (conn, ref) => {
-  return conn.getByReference(ref)
+  return await conn.getByReference(ref)
 }
 
 const findRefInChannel = async (conn, did, ref) => {
-  return conn.findRefInChannel(did, ref)
+  return await conn.findRefInChannel(did, ref)
 }
 
 module.exports = {

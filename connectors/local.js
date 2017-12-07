@@ -20,12 +20,12 @@ module.exports = class LocalConnector extends BaseConnector {
   }
 
   getDid(pkey) {
-    return 'did:discipl:local'+CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(pkey, 'did:discipl'));
+    return 'did:discipl:local' + CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(pkey, 'did:discipl'));
   }
 
   async claim(obj, pkey) {
     var did = this.getDid(pkey);
-    if(!this.storeData[did]) {
+    if (!this.storeData[did]) {
       this.storeData[did] = new Array();
     }
     var index = CryptoJS.enc.Base64.stringify(CryptoJS.lib.WordArray.random(64));
@@ -34,7 +34,7 @@ module.exports = class LocalConnector extends BaseConnector {
   }
 
   async getByReference(ref, did) {
-      return this.storeData[did][ref];
+    return this.storeData[did][ref];
   }
 
   async findRefInChannel(did, ref) {
@@ -56,14 +56,14 @@ module.exports = class LocalConnector extends BaseConnector {
   }
 
   attest(obj, pkey, hashkey) {
-      // Todo add did as subject (the attestor making the attestation claim)
-      return claim(CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(obj,hashkey)),pkey);
+    // Todo add did as subject (the attestor making the attestation claim)
+    return claim(CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(obj, hashkey)), pkey);
   }
 
-  async verify(ref, attestor_did, obj, hashkey) {
-      var hash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(obj,hashkey));
-      var attestation = getByReference(ref, attestor_did);
-      return hash == attestation;
+  async verify(ref, attestorDid, data, hashKey) {
+    var hash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashkey));
+    var attestation = getByReference(ref, attestorDid);
+    return hash == attestation;
   }
 
 }
