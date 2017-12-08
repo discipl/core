@@ -70,17 +70,18 @@ module.exports = class IotaConnector extends BaseConnector {
 
   attest(mamState, data, hashKey) {
     var attesthash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashKey))
-    return this.claim(mamState, hashKey)
+    return this.claim(mamState, attesthash)
   }
 
   async verify(ref, attestorDid, data, hashKey) {
+    var attestHash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashKey))
     console.log('obj: ' + data + ' ' + data.length);
     console.log('hashKey: ' + hashKey + ' ' + hashKey.length);
     var attestation = await this.getByReference(attestorDid);
-    console.log(hashKey + ' == ' + attestation);
+    console.log(attestHash + ' == ' + attestation);
     var found = await this.findRefInChannel(attestorDid);
     debug('Found in attestor channel: ' + found);
-    return found && (hashKey === attestation);
+    return found && (attestHash === attestation);
   }
 
 }
