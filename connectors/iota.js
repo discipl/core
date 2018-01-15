@@ -35,10 +35,11 @@ module.exports = class IotaConnector extends BaseConnector {
     var trytes = this.iota.utils.toTrytes(data);
     var message = this.Mam.create(mamState, trytes);
     mamState = message.state;
-    await this.Mam.attach(message.payload, message.address);
+    var attachResult = await this.Mam.attach(message.payload, message.address);
     return {
       mamState,
-      root: message.root
+      attachResult,
+      message
     };
   }
 
