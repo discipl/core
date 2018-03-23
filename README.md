@@ -1,13 +1,29 @@
 
-## Discipl Core api
+## Discipl Core API
 
 For the WHY and HOW of Discipl Core: see http://discipl.org and presentation in the docs folder
 (as presented on a first open source ecosystem meetup).
 
-Below you can find the description of the common interface implemented by discipl core bindings:
+Below you can find the description of the common interface implemented by discipl core connectors:
 
-  - dclocal : simply stores claims (and attestations) locally in an array tied to a DID
-  - dciota  : stores claims (and attestations) in public IOTA MAM channels (on the distributed IOTA tangle) tied to a DID
+  - local : simply stores claims (and attestations) locally in an array tied to a DID. Note that this is currently not encrypted.
+  - iota  : stores claims (and attestations) in public IOTA MAM channels (on the distributed IOTA tangle) that are tied to a DID
+ 
+The following connectors will be added soon:
+
+  - blockchain
+  - ethereum
+  - trustchain : see tribler.org
+ 
+Other connectors may be included in near future:
+
+ - rchain
+ - leopardledger
+ - forus
+ - irma
+ - sovrin 
+ - secure scuttlebutt
+ - ...
 
 Note this library is in early development. Do not use in production.
 
@@ -19,7 +35,7 @@ yarn install
 
 ## Basic Usage
 
-this package will export the DCLOCAL and DCIOTA bindings that export a similair interface as explained in the API (below)
+this package will export the connectors that export a similair interface as explained in the API (below)
 
 ```
 npm install discipl-core
@@ -28,43 +44,41 @@ npm install discipl-core
 then in Node:
 
 ```
-var discipl = require('discipl-core')
-discipl.iota.setIOTANode("http://node1.iotatoken.nl:14265");
+const discipl = require('discipl-core')
+const Mam = require('mam.client.js/lib/mam.node.js')
+const iotaConnector = new discipl.connectors.iota(Mam, new IOTA({ provider: 'http://node.discipl.org:14265' }))
+var mamState = discipl.initState(iotaConnector, seed)
+const attestorDid = await discipl.getDid(iotaConnector, mamState)
+console.log("Attestor DID: " + attestorDid);
+var { mamState, message, attachResult } = await discipl.claim(iotaConnector, mamState, {'msg':'Hello World!'});
+...
 ```
+
+see examples folder for more example code
 
 ## API
 
-### `setIOTANode`
-IOTA only: Sets the IOTA node to connect to. Use a provider URL like: http://iota.discipl.org:14265. 
-dciota specific: Optionally can be given a remembered mamState string (stringified JSON object) to start in that state
-```
-setIOTANode(iotaNodeUrl)
-```
+Note: every API call takes a Discipl Connector as first parameter. This is not repeated for every method description below:
 
-### `getState`
-IOTA only: gets the current MAM state (as stringified JSON) in the iota binding
+### `initState`
+IOTA only: initialises the MAM state in the iota binding. returns the mamState object. Note that the Discipl IOTA connector also provides a (de)serialize method for the mamState object. 
+The initData should be the IOTA wallet seed (a private key) to which the MAM channel will be bound. Note that this seed stays local.
 ```
-getState()
-```
-
-### `setState`
-IOTA only: sets the current MAM state in the iota binding. stateStr must be a stringified JSON MAM state object.
-```
-setState(stateStr)
+initState(initData)
 ```
 
 ### `getDid`
 Retrieves the DID (did.discipl...) tied to the given private key in the current store
 ```
-getDid(pkey)
+getDid(conn, pkey)
 ```
 
 ### `claim`
 Stores the given (JSON-LD) claim into the store using an account tied to the subject (an id) in the given linked data triples
 which has to be tied to the given private key. All triples should be about the same subject. NB in case of IOTA the pkey is the seed
-used by the subject. returns reference to the claim (an universlly unique id)
+used by the subject. returns a reference to the claim (an universlly unique id)
 ```
-function claim(obj, pkey)
+function claim(conn, obj, pkey)
 ```
 
 ### `attest`
@@ -72,24 +86,24 @@ Stores an attestation of the given (JSON-LD) claim into the store using a given 
 the claim is not stored itself but only a keyed hash of it for which the given hashkey is used. The keys are not stored anywhere.
 A reference to the stored attestation is returned
 ```
-function attest(obj, pkey, hashkey)
+function attest(conn, obj, pkey, hashkey)
 ```
 
 ### `verify`
 evaluates whether the store contains an attestation at the address ref of the given (JSON-LD) claim object attested by (one of) the given attestor(s) using the given hashkey
 note currently only capable of receiving one attestor did.
 ```
-function verify(ref, attestor_did, obj, hashkey)
+function verify(conn, ref, attestor_did, obj, hashkey)
 ```
 
 ### `revoke`
 Not Yet Implemented: revokes a particular claim. Verification of a revoked claim or attestation of a claim will result in false.
 ```
-function revoke(ref, pkey)
+function revoke(conn, ref, pkey)
 ```
 
 ### `getByReference`
 the only getter for now is one that requires a direct reference
 ```
-function getByReference(ref, did)
+function getByReference(conn, ref, did)
 ```

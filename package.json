@@ -1,6 +1,6 @@
 {
   "name": "discipl-core",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Discipl Core API",
   "main": "index.js",
   "repository": "https://github.com/discipl/core",
