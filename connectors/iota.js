@@ -41,17 +41,19 @@ module.exports = class IotaConnector extends BaseConnector {
     };
   }
 
-  async getByReference(did) {
-    var ref = did.slice(16)
-    var obj = null;
+  async getByReference(ref) {
     var resp = await this.Mam.fetchSingle(ref, 'public', null);
     return this.iota.utils.fromTrytes(resp.payload);
   }
-
-  async findRefInChannel(did) {
-    var ref = did.slice(16)
+  
+  async exportLD(did) {
+	// todo:
+	// generate linked data dump following all attestation by reference links
+  }
+  
+  async findRefInChannel(did, ref) {
     var resp = {
-      nextRoot: ref
+      nextRoot: did.slice(16)
     };
     while (resp) {
       debug('... ' + resp.nextRoot);
@@ -66,19 +68,33 @@ module.exports = class IotaConnector extends BaseConnector {
     }
     return false;
   }
-
+  
+  attestHash(data, hashKey) {
+	return CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashKey));
+  }
+  
   attest(mamState, data, hashKey) {
-    var attesthash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashKey))
+    var attesthash = attestHash(data, hashKey)
     return this.claim(mamState, attesthash)
   }
+  
+  attestByReference(mamState, ref) {
+	var attest = {'attest':ref};
+	return this.claim(mamState, JSON.stringify(attest))
+  }
 
+  async verifyByRef(ref, attestorDid) {
+	// todo:
+	// find claim in channel that links to ref as attestation
+  }
+  
   async verify(ref, attestorDid, data, hashKey) {
     var attestHash = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, hashKey))
     console.log('obj: ' + data + ' ' + data.length);
     console.log('hashKey: ' + hashKey + ' ' + hashKey.length);
-    var attestation = await this.getByReference(attestorDid);
+    var attestation = await this.getByReference(ref);
     console.log(attestHash + ' == ' + attestation);
-    var found = await this.findRefInChannel(attestorDid);
+    var found = await this.findRefInChannel(attestorDid, ref);
     debug('Found in attestor channel: ' + found);
     return found && (attestHash === attestation);
   }

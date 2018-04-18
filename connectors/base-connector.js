@@ -26,16 +26,34 @@ module.exports = class BaseConnector {
 
   }
 
+  async exportLD(did) {
+  
+  }
+  
   async findRefInChannel(did, ref) {
 
+  }
+
+  attestHash(data, hashKey) {
+  
   }
 
   attest(state, data, hashKey) {
 
   }
+  
+  attestByReference(mamState, ref) {
+	  
+  }
+  
+  async verifyByRef(ref, attestorDid) {
+	  
+  }
 
   async verify(state, data, hashKey, attestorDid) {
 
   }
+  
+  
 
 }
