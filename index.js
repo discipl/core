@@ -28,12 +28,20 @@ const attest = async (conn, state, data, hashKey) => {
   return conn.attest(state, data, hashKey)
 }
 
+const attestByReference = (conn, mamState, ref) => {
+  return conn.attestByReference(mamState, ref)
+}
+
 const verify = async (conn, ref, attestorDid, data, hashKey) => {
   return await conn.verify(ref, attestorDid, data, hashKey)
 }
 
 const getByReference = async (conn, ref) => {
   return await conn.getByReference(ref)
+}
+
+const exportLD = async (conn, did) => {
+  return await conn.exportLD(did)
 }
 
 const findRefInChannel = async (conn, did, ref) => {
@@ -47,7 +55,9 @@ module.exports = {
   getDid,
   claim,
   attest,
+  attestByReference,
   verify,
   getByReference,
+  exportLD,
   connectors: connectors
 }

@@ -35,6 +35,7 @@ module.exports = class IotaConnector extends BaseConnector {
     var trytes = this.iota.utils.toTrytes(data);
     var message = this.Mam.create(mamState, trytes);
     mamState = message.state;
+	await this.Mam.attach(message.payload, message.address)
     return {
       mamState,
       message
@@ -47,8 +48,38 @@ module.exports = class IotaConnector extends BaseConnector {
   }
   
   async exportLD(did) {
-	// todo:
-	// generate linked data dump following all attestation by reference links
+	return exportLD(did, {})
+  }
+  
+  async exportLD(did, didStack) {
+	var vcdata = {}
+	var resp = {
+      nextRoot: did.slice(16)
+    };
+    while (resp) {
+      console.log('... ' + resp.nextRoot)
+	  
+      try {
+        resp = await this.Mam.fetchSingle(resp.nextRoot, 'public', null);
+      } catch (e) { 
+		console.log("Error reading channel : "+e)
+		break;
+	  };
+	  if(resp) {
+		var data = this.iota.utils.fromTrytes(resp.payload)
+		if(data.slice == 'did:discipl:iota' && !didStack.contains(data)) {
+			vcdata[resp.nextroot].did = data
+			didStack.push(data)
+			vcdata[resp.nextroot].data = await exportLD(data, didStack)
+		}
+		else {
+			vcdata[resp.nextroot] = data
+		}
+	  } else {
+		console.log("End of channel for did: "+did)
+	  }
+    }
+    return vcdata
   }
   
   async findRefInChannel(did, ref) {
