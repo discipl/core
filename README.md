@@ -9,18 +9,18 @@ Below you can find the description of the common interface implemented by discip
   - local : simply stores claims (and attestations) locally in an array tied to a DID. Note that this is currently not encrypted.
   - iota  : stores claims (and attestations) in public IOTA MAM channels (on the distributed IOTA tangle) that are tied to a DID
  
-The following connectors will be added soon:
+The following connectors will be added in near future:
 
+  - irma
   - blockchain
   - ethereum
   - trustchain : see tribler.org
+  - leopardledger
+  - forus
  
 Other connectors may be included in near future:
 
  - rchain
- - leopardledger
- - forus
- - irma
  - sovrin 
  - secure scuttlebutt
  - ...
@@ -76,7 +76,7 @@ getDid(conn, pkey)
 ### `claim`
 Stores the given (JSON-LD) claim into the store using an account tied to the subject (an id) in the given linked data triples
 which has to be tied to the given private key. All triples should be about the same subject. NB in case of IOTA the pkey is the seed
-used by the subject. returns a reference to the claim (an universlly unique id)
+used by the subject. returns a reference to the claim (an universlly unique id). Note the method attaches the claim to the tangle causing PoW to be done.
 ```
 function claim(conn, obj, pkey)
 ```
@@ -87,6 +87,20 @@ the claim is not stored itself but only a keyed hash of it for which the given h
 A reference to the stored attestation is returned
 ```
 function attest(conn, obj, pkey, hashkey)
+```
+
+### `attestByReference`
+Stores an attestation of the claim a given claim reference refers to into the store using a given attestor did with corresponding private key (of the attestor)
+the referred claim is not stored itself but only a claim containing the reference.
+A reference to the stored attestation is returned
+```
+function attestByReference(conn, obj, reference)
+```
+
+### `exportLD`
+Returns a json object containing all messages in the channel of the given did. references to claims in other channels are followed recursively
+```
+function exportLD(conn, did)
 ```
 
 ### `verify`
