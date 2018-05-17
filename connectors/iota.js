@@ -48,17 +48,17 @@ module.exports = class IotaConnector extends BaseConnector {
   }
   
   async exportLD(did) {
-	return exportLD(did, {})
+	return this.exportLD2(did, [])
   }
   
-  async exportLD(did, didStack) {
+  async exportLD2(did, didStack) {
 	var vcdata = {}
 	var resp = {
       nextRoot: did.slice(16)
     };
     while (resp) {
       console.log('... ' + resp.nextRoot)
-	  
+	  var current = resp.nextRoot;
       try {
         resp = await this.Mam.fetchSingle(resp.nextRoot, 'public', null);
       } catch (e) { 
@@ -66,15 +66,13 @@ module.exports = class IotaConnector extends BaseConnector {
 		break;
 	  };
 	  if(resp) {
-		var data = this.iota.utils.fromTrytes(resp.payload)
-		if(data.slice == 'did:discipl:iota' && !didStack.contains(data)) {
-			vcdata[resp.nextroot].did = data
-			didStack.push(data)
-			vcdata[resp.nextroot].data = await exportLD(data, didStack)
+		var data = JSON.parse(this.iota.utils.fromTrytes(resp.payload))
+		var key = Object.keys(data)[0];
+		if((data[key]) && data[key].slice(0, 16) == 'did:discipl:iota' && !didStack.includes(data[key])) {
+			didStack.push(data[key])
+			data.data = await this.exportLD2(data[key], didStack)
 		}
-		else {
-			vcdata[resp.nextroot] = data
-		}
+		vcdata[current] = data
 	  } else {
 		console.log("End of channel for did: "+did)
 	  }
