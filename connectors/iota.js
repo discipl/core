@@ -71,6 +71,7 @@ module.exports = class IotaConnector extends BaseConnector {
 		if((data[key]) && data[key].slice(0, 16) == 'did:discipl:iota' && !didStack.includes(data[key])) {
 			didStack.push(data[key])
 			data.data = await this.exportLD2(data[key], didStack)
+			didStack.pop();
 		}
 		vcdata[current] = data
 	  } else {
