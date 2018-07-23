@@ -9,39 +9,29 @@ Discipl Core is meant to be lean and simple and it does not impose usage of meta
 
 ## Terminology
 
-self sovereign id : a random identifier an actor chooses/generates for him/herself to refer to him/herself in subsequent communication. This identifier mostly is a public key belonging to a private key the holder of that key can use to make claims exclusively in relation to this self sovereign id. Within Discipl Core we use a DID like syntax for this identifier so when referring to the "DID" of an actor we also mean this self sovereign id of the actor. Note that self sovereign identities are meant to be relatively short lived and bounded by use case.
-
-claim : one or more subject-predicate-object triples, typically stored as JSON-LD with no metadata where the subject is always the DID (or reference to this in the form of "I") of the actor that created the claim. The predicate is any string and required. The object, a string, is optional.
-
-channel : set of claims with the same object (same DID)
-
-attestation : a claim with a link to some other claim (could be a claim with the same subject, thus in the same channel). 
-
-link : The link is either a platform specific reference (if the platforms supports that and it's immutabillity is to be trusted, or it is intended to be mutable), or it can contain a proof, for instance a peppered hash (HMAC-386) of (multiple) predicate-object parts of the claim with the object (a DID) as key. This DID is to be kept off ledger then by the way. So to be able to verify such proofs, you'll need to know at forehand the whole claim being attested and thus know the actual link (or you'll probably have to do a lot of work), but the proof does define a link to some otherwise unreferencable piece of information. In most cases you would get the claim being referenced from the actor that made the claim. Do not mistake a link by proof with a verifiable claim/credential for sensitive data though, on itself, it is not intended nor safe for this usage as for instance peppered hashes are not considered good enough as an anonymisation technique. The proof is intended to verify a link to a given piece of information in the underlying platform this information is stored in. The proof in these links is platform specific and may not be suitable to be stored on ledgers.
-
-A reference can be a specific reference to a logged transaction the claim was stored with, or it can be the DID, referencing the first claim in the corresponding channel. Platforms may have limited functionality. The link always denotes the platform and does this by using a notation similair to the DID notation. Examples:
-
-link by reference (of a DID or transaction) : link:discipl:iotaDJI99DSKNSNDL99WDSDNSDNLLWNWNWQQNLSDNSDN9SD999SDSDNKNJSND9DSHPLVZ
-link by proof     			 			    : link:discipl:zenroomLIwew77897wer[=87s9ydh]sd999sdnkLIJEOJJ#*Y*YOjjjhskds93k4n3knk9fs
-
-(above examples are just an indication)
-
-platform : any operational technology capable of storing/retrieving claims in relation to self sovereign id's
-
-linked data export : given a DID, one can export all claims of that DID and all claims in channels with claims linked by reference in those claims and all claims in channels with claims referenced in those claims and so on. Stopping at circulair references one can export or iteratively traverse a whole dataset. Note that a separate DID should be used for a single proces in a single use case which should make the dataset limited. Dependent on the use case it can become fairly big though.
+term | description
+--- | ---
+*self sovereign id* | a random identifier an actor chooses/generates for him/herself to refer to him/herself in subsequent communication. This identifier mostly is a public key belonging to a private key the holder of that key can use to make claims exclusively in relation to this self sovereign id. Within Discipl Core we use a DID like syntax for this identifier so when referring to the "DID" of an actor we also mean this self sovereign id of the actor. Note that self sovereign identities are meant to be relatively short lived and bounded by use case.
+*claim* | one or more subject-predicate-object triples, typically stored as JSON-LD with no metadata where the subject is always the DID (or reference to this in the form of "I") of the actor that created the claim. The predicate is any string and required. The object, a string, is optional.
+*channel* | set of claims with the same object (same DID)
+*attestation* | a claim with a link to some other claim (could be a claim with the same subject, thus in the same channel). 
+*link* | The link is either a platform specific reference (if the platforms supports that and it's immutabillity is to be trusted, or it is intended to be mutable), or it can contain a proof, for instance a peppered hash (HMAC-386) of (multiple) predicate-object parts of the claim with the object (a DID) as key. This DID is to be kept off ledger then by the way. So to be able to verify such proofs, you'll need to know at forehand the whole claim being attested and thus know the actual link (or you'll probably have to do a lot of work), but the proof does define a link to some otherwise unreferencable piece of information. In most cases you would get the claim being referenced from the actor that made the claim. Do not mistake a link by proof with a verifiable claim/credential for sensitive data though, on itself, it is not intended nor safe for this usage as for instance peppered hashes are not considered good enough as an anonymisation technique. The proof is intended to verify a link to a given piece of information in the underlying platform this information is stored in. The proof in these links is platform specific and may not be suitable to be stored on ledgers.<br><br>A reference can be a specific reference to a logged transaction the claim was stored with, or it can be the DID, referencing the first claim in the corresponding channel. Platforms may have limited functionality. The link always denotes the platform and does this by using a notation similair to the DID notation. Examples:<br>- *link by reference (of a DID or transaction)* : link:discipl:iotaDJI99DSKNSNDL99WDSDNSDNLLWNWNWQQNLSDNSDN9SD999SDSDNKNJSND9DSHPLVZ<br>- *link by proof* : link:discipl:zenroomLIwew77897wer[=87s9ydh]sd999sdnkLIJEOJJ#*Y*YOjjjhskds93k4n3knk9fs<br>(above examples are just an indication)
+*platform* | any operational technology capable of storing/retrieving claims in relation to self sovereign id's
+*linked data export* | given a DID, one can export all claims of that DID and all claims in channels with claims linked by reference in those claims and all claims in channels with claims referenced in those claims and so on. Stopping at circulair references one can export or iteratively traverse a whole dataset. Note that a separate DID should be used for a single proces in a single use case which should make the dataset limited. Dependent on the use case it can become fairly big though.
 
 ## supported platforms
 
 Many platforms can be supported to become part of the discipl platform. We distinguish the following platform types:
 
--- local wallet 	: platforms that store claims in local wallets within platform specific apps or platforms that are implemented as libraries for local storage of claims
--- public ledger	: permissionless public distributed ledgers. 
--- hybrid 			: permissionless public distributed platforms that combine both public ledger as local wallet platform type of functionality 
--- hybrid managed	: permissioned, centrally managed distributed ledgers that might be GDPR compliant enough to store sensitive data in.
+- local wallet 	: platforms that store claims in local wallets within platform specific apps or platforms that are implemented as libraries for local storage of claims
+- public ledger	: permissionless public distributed ledgers. 
+- hybrid 			: permissionless public distributed platforms that combine both public ledger as local wallet platform type of functionality 
+- hybrid managed	: permissioned, centrally managed distributed ledgers that might be GDPR compliant enough to store sensitive data in.
 
 At the moment just a few have initial implementations, most are planned, others desired. All these supported platforms have their own connector repository. platform connectors implement the connector interface defined here.
 
 Platform		| Type 				| Status		| Connector Repository			| Usable for PII | duration	| requires node | Remarks
+--- | --- | --- | --- | --- | --- | --- | ---
 Memory			| local wallet		| implemented	| discipl-core-mem				| yes			 | <0.1s	| no, only local| you must add memory protection yourselves, just a local store of claims in memory as long as process it is used in runs
 IOTA 			| public ledger		| implemented	| discipl-core-iota				| no			 | 30s		| yes, manual	| uses IOTA MAM feature in public mode and Carriota field, retaining claims after each milestone requires permanodes. MAM protected and private mode are not GDPR compliant. Note: IOTA uses a central coordinator which approves transactions but it does not do more than that; it is intended to be removed as soon as possible
 IPV8			| hybrid			| planned		| discipl-core-ipv8				| yes			 | <0.1s 	| possible		| can use local svc or svc on node
@@ -167,10 +157,10 @@ exports linked claim data, starting at the first claim in the channel of the giv
 
 The exported dataset is a JSON object containing a list of JSON objects containing an exported claim with a link as key. The claim itself, is a JSON object that can contain expanded or unexpanded links. unexpanded links contain special values indicating the reason that the link was not expanded which can be eiter:
 
-MAX-DEPTH-REACHED 	: the case in which the given export depth was reached 
-NOT_PERMITTED 		: the case in which the platform requires a current ssid set in a given session object to identify itself with a private key and this ssid was not set or not permitted to access the linked claim
-NOT_ACCESSIBLE		: the case in which the linked claim is not accessible, because (a proper part of) the platform is not available
-NOT_FOUND			: the case in which the linked claim could not be found (while the platform seems to be available in a sufficient way)
+- MAX-DEPTH-REACHED 	: the case in which the given export depth was reached 
+- NOT_PERMITTED 		: the case in which the platform requires a current ssid set in a given session object to identify itself with a private key and this ssid was not set or not permitted to access the linked claim
+- NOT_ACCESSIBLE		: the case in which the linked claim is not accessible, because (a proper part of) the platform is not available
+- NOT_FOUND			: the case in which the linked claim could not be found (while the platform seems to be available in a sufficient way)
 
 Dependent on the reason, further expansion of the export can be achieved. 
 
