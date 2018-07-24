@@ -126,7 +126,7 @@ discipl.claim(session, {'need':'beer'}, function (result, err) {
 ```
 
 ### `link`
-Creates a link to the given claim to be used in attestations to be made by the current Ssid set in the given session. The claim can be a reference or a claim (any JSON-LD object with a single DID as subject) and should be available in the platform used by the given connector indication (the connector name) though this is not enforced. Note, as the claim, attest, verify and revoke methods accept links in their arguments you probably don't need to use this method. 
+Creates a link to the given claim to be used in attestations. The claim can be a reference or a claim (in the form of JSON: {subject:did, predicate:object, predicate:object, ...}) and should be available in the platform used by the given connector indication (the connector name) though this is not enforced. Note, as the claim, attest, verify and revoke methods accept links in their arguments you probably don't need to use this method directly. 
 ```
 link(connector, claim)
 ```
