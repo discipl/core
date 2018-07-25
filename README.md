@@ -55,8 +55,20 @@ Where needed you create a self sovereign identity for a given platform, consisti
 
 Note that self sovereign identities are meant to be relatively short lived and bounded by use case. The discipl-4sacan and discipl-law-reg modules are intended to be able to automaticly create ssid's for actors bounded by the actor's usage of use cases within published law and regulations and can let actors choose a connector to keep them safe and automaticly remembered when needed.
 
+## Installation
+
+node comes with npm installed so you should have a version of npm, however npm gets updated more frequently than node does, so you'll want to make sure it's the latest version.
 ```
-npm install discipl-core
+sudo npm install npm -g
+```
+clone the discipl-core repository
+```
+git clone git@github.com:discipl/core.git
+```
+Switch to core directory
+
+```
+npm install
 npm install discipl-core-iota
 ```
 
