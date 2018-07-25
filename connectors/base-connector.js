@@ -4,56 +4,32 @@ module.exports = class BaseConnector {
 
   }
 
-  initState(initData) {
-    throw new Error("BaseConnector is not meant for direct usage.")
-  }
-  
-  serialize(state) {
-  }
-
-  deserialize(state) {
-  }
-
-  getDid(state) {
+  getName() {
 
   }
 
-  async claim(state, data) {
+  getSsidOfClaim() {
 
   }
 
-  async getByReference(ref) {
+  newSsid() {
 
   }
 
-  async exportLD(did) {
-  
-  }
-  
-  async findRefInChannel(did, ref) {
+  claim() {
 
   }
 
-  attestHash(data, hashKey) {
-  
-  }
-
-  attest(state, data, hashKey) {
+  get() {
 
   }
-  
-  attestByReference(mamState, ref) {
-	  
-  }
-  
-  async verifyByRef(ref, attestorDid) {
-	  
-  }
 
-  async verify(state, data, hashKey, attestorDid) {
+  getLatestClaimInChannel() {
 
   }
-  
-  
+
+  subscribe() {
+
+  }
 
 }
