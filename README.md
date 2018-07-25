@@ -69,7 +69,6 @@ Switch to core directory
 
 ```
 npm install
-npm install discipl-core-iota
 ```
 
 then in Node:
