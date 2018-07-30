@@ -208,6 +208,7 @@ const revoke = async (ssid, link) => {
 }
 
 module.exports = {
+  getConnector,
   newSsid,
   claim,
   attest,
