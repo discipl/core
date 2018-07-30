@@ -18,7 +18,7 @@ var disciplCoreConnectors = []
  * requires and holds in memory the given discipl connector (if not done before)
  */
 const initializeConnector = (connector) => {
-  if(!Object.keys(disciplCoreConnectors).contains(connector)) {
+  if(!Object.keys(disciplCoreConnectors).includes(connector)) {
     disciplCoreConnectors[connector] = require(CONNECTOR_MODULE_PREFIX+connector)
     disciplCoreConnectors[connector].setDisciplAPI(this)
   }
@@ -181,7 +181,7 @@ const exportLD = async (link, depth = 3, ssid = null, visitedStack = []) => {
     }
     for(elem in data) {
       if(isValidLink(elem)) {
-        if(depth && !visitedStack.contains(elem)) {
+        if(depth && !visitedStack.includes(elem)) {
           depth--;
           visitedStack.push(elem)
           let ld = await exportLD(elem, depth, ssid, visitedStack)
