@@ -1,35 +1,50 @@
 module.exports = class BaseConnector {
 
   constructor() {
+    this.discipl = null
+  }
 
+  setDisciplAPI(api) {
+    this.discipl = api
   }
 
   getName() {
-
+    return "base"
   }
 
-  getSsidOfClaim() {
-
+  getSsidOfClaim(reference) {
+    return null
   }
 
   newSsid() {
-
+    return {'pubkey':null, 'privkey':null}
   }
 
-  claim() {
-
+  async claim(ssid, data) {
+    return false;
   }
 
-  get() {
-
+  get(ssid, reference) {
+    return {'data':'', 'previous':null}
   }
 
-  getLatestClaimInChannel() {
-
+  /**
+   * Verifies existence of a claim with the given data in the channel of the given ssid
+   */
+  verify(ssid, data) {
+    let current = null
+    let {d, p} = get(ssid, null)
+    while((p != null) && (JSON.stringify(data) != JSON.stringify(d))) {
+      current = p
+      let {dp, pp} = get(ssid, p)
+      d = dp
+      p = pp
+    }
+    return current
   }
 
-  subscribe() {
-
+  subscribe(ssid) {
+    return false;
   }
 
 }

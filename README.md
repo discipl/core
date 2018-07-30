@@ -1,11 +1,12 @@
 
 ## Discipl Core API
 
-This API is a javascript Es6 module intended for client side usage. It is intended to run in NodeJS, React Native (through expo.io) and JS engines in webbrowsers. With it you can let actors create self sovereign id's, let them make claims about themselves, attest claims of others, verify claim attestations and possibly revoke claims. The self sovereign id is a DID (https://github.com/WebOfTrustInfo/rebooting-the-web-of-trust-fall2017/blob/master/draft-documents/did-primer.md) denoting a supported platform which is any platform that supports storing claims in relation to a public id, contained in the DID, and enforces that only a holder of a corresponding private key can make claims in relation to that id. The claims in relation to a particular DID form a channel and can link to claims in other channels. These claims are attestations. The API contains a function to see whether a particular claim is attested by one or more particular other DID's. Further it contains functions to retrieve claims in channels, monitor channels and even traverse or fetch all data in the linked channels.
+This API is a javascript ES6 module intended for client side usage. It is intended to run in NodeJS, React Native (through expo.io) and JS engines in webbrowsers. With it you can let actors create self sovereign id's, let them make claims about themselves, attest claims of others, verify claim attestations and possibly revoke claims. The self sovereign id is a string with DID syntax (https://github.com/WebOfTrustInfo/rebooting-the-web-of-trust-fall2017/blob/master/draft-documents/did-primer.md) denoting a supported platform which is any platform that supports storing claims in relation to a public id, contained in the DID, and enforces that only a holder of a corresponding private key can make claims in relation to that id. The claims in relation to a particular DID form a channel and can link to claims in other channels. These claims are attestations. The API contains a method to see whether a particular claim is attested by one or more particular other DID's. Further it contains functions to retrieve claims in channels, monitor channels and even traverse or fetch all data in the linked channels.
 
-In essence the API is therefore a linked data client that can crawl over all used and supported platforms that attestations link to. Doing so it can export or you can traverse a linked data set for all kinds of processing like feeding a dashboard based on R with discipl-R. There are a lot of platforms that can be used: distributed public ledgers, permissioned ledgers but also more private self sovereign identity/ verifiable claim or credential solutions. The specifics of the platform used determins how safe it is to put what kind of information in claims. So note that discipl core does not prohibit you to put sensitive information in public if you choose the wrong platform. Note that self sovereign identities are meant to be relatively short lived and it's usage bounded by a use case.
+In essence the API is therefore a linked data client that can crawl over all used and supported platforms that attestations link to. Doing so it can export or you can traverse a linked data set for all kinds of processing like feeding a dashboard based on R with discipl-R. There are a lot of platforms that can be used: distributed public ledgers, permissioned ledgers but also more private self sovereign identity/ verifiable claim or verifiable credential solutions. The specifics of the platform used determins how safe it is to put what kind of information in claims and what functionality is available. So note that discipl core does not prohibit you to put sensitive information in public if you choose the wrong platform. Note that self sovereign identities are meant to be relatively short lived and it's usage bounded by a use case to prevent privacy issues because of linkabillity, even with seemingly anonymous information.
 
-Discipl Core is meant to be lean and simple and it does not impose usage of metadata on data. It only enforces and therefore structures linked data to have always self sovereign id's as subject of the linked data triples and that the holder of a private key related to this self sovereign as public key is the only one that can store such triples, we call claims. It therefore wil not neccasarily comply with standards like the verifiable credentials specification but will follow it's own path as it's usage is more broad than only verifiable credentials.
+Discipl Core is meant to be lean and simple and it does not impose usage of metadata on data. It only enforces and therefore structures linked data to have always self sovereign id's as subject of the linked data triples and that the holder of a private key related to this self sovereign as public key is the only one that can store such triples, we call claims. It therefore wil not neccasarily comply fully with standards like the verifiable credentials specification but will follow it's own path as it's usage is more broad than only verifiable credentials. It may provide access to
+functionality provided by platforms that do comply with the verifiable crendential standards.
 
 ## Terminology
 
@@ -49,9 +50,9 @@ Note this library and all connectors are in early experimental development. Do n
 
 ## Basic Usage
 
-This ES6 module will export the main interface to use discipl-core. You'll have to require connector modules and if they require a node you'll need to configure them which will make them available and used through the main interface. Alternatively you can configure the discipl core module to use a discipl node (here). By default, this library expects a local discipl node. The platforms that are made available through this node will be automaticly required and configured.
+This ES6 module will export the main interface to use discipl-core. It will automaticly require modules when needed. Of course it doesn't install them for you so make sure all connector modules for platforms you want to support are installed. Make sure you configure the connector modules within your code before using the discipl core api or rely on the default operation that the connector uses a discipl node (here). By default, this library expects a local discipl node but you can set a custom URL. The platforms that are made available through this node will be automaticly required and configured.
 
-Where needed you create a self sovereign identity for a given platform, consisting of a public-private key where the public key is contained in a correspondig DID. You are responsible for persisting these keys yourself if neccasary. If you want to use a previously created identity, you must set it. Sometimes however, you do not have to set a identity for instance if you are only going to read information from a public platform.
+Where needed you create a self sovereign identity for a given platform, mainly consisting of a public-private key where the public key is contained in a correspondig DID. You are responsible for persisting these keys yourself if neccasary. If you want to use a previously created identity, you must set it. Sometimes however, you do not have to set a identity for instance if you are only going to read information from a public platform.
 
 Note that self sovereign identities are meant to be relatively short lived and bounded by use case. The discipl-4sacan and discipl-law-reg modules are intended to be able to automaticly create ssid's for actors bounded by the actor's usage of use cases within published law and regulations and can let actors choose a connector to keep them safe and automaticly remembered when needed.
 
@@ -72,94 +73,44 @@ Switch to core directory
 npm install
 ```
 
-then in Node:
+then in your NodeJS script:
 
 ```
 const discipl = require('discipl-core')
-const session = discipl.newSession()
-discipl.newSsid(session, 'iota')
-discipl.claim(session, {'need':'beer'}, function (result, err) {
-	if(!err) {
-		console.log("Claim registered: "+result)
-	} else {
-		console.log("Failed to register claim: "+err);
-	}
-})
+const ssid = discipl.newSsid('iota')
+discipl.claim(ssid, {'need':'beer'}).then(console.log).catch(console.log)
 ```
 
-see examples folder for more example code
+Most methods are asynchronous so will return Promises, something which we prefer over using callbacks.
+
+See examples folder for more example code (coming soon)
 
 ## API
 
-### `newSession`
-Returns a session object that will hold current states of the channels tied to self sovereign identities that are accessed in relation to this session. One Ssid can be set in relation to a session
-that is used as actor when making claims in this session. You can create multiple sessions in parallel for situations multiple ssid's are makeing claims at the same time.
-
-```
-newSession()
-```
-
 ### `newSsid`
-Creates a new Ssid for the given connector platform consisting of a DID (containing public key) and a private key. This action will open up a channel tied to this DID on the platform. Nobody will know about this
-however until a first claim is published publicly (depends on platform). The new Ssid is automaticly set to be used in relation to the given session. The connector name should be given as connector argument.
+Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for.
+This action will open up a channel tied to this DID on the platform. Nobody will know about this
+however until a first claim is published publicly (depends on platform). The connector name should be given as argument.
 By default this is to be the same as the part after "discipl-core-" in the name of the connector repository in github. So for instance, for IOTA it is "iota" (lowercase).
 
 ```
-newSsid(session, connector)
-```
-
-### `setSsid`
-Sets a Ssid in relation to the given session. The given private key is held locally in the session object.
-The Ssid should be provided as a JSON object in the form of {did:pkey}
-You can make a session "forget" a Ssid by providing empty values: {"":""}
-
-```
-setSsid(session, ssid)
-```
-
-###	`getSsid`
-Returns the Ssid currently set in the session object. The Ssid is returned as a JSON object in the form of {did:pkey}
-
-```
-getSsid()
+newSsid(connector)
 ```
 
 ### `claim`
-Makes the Ssid set in the current session make one or more claims with the given data in it. The given data should be a JSON object with a list of key:value pairs in which the keys are predicates and the values the objects.
-objects can nest predicate-object pairs which may cause links to self owned claims to be stored. A connector may also store this kind of nested claims in a nested way though. Note: you will not be able to
-reference, attest and thus verify single nested claims. Storing a claim on a platform can take some time, dependent on the platform used. Therefor this method is asynchronous and takes a handler function that defines two (result and error)
-arguments as third argument. If no error occurred the handler function receives a link to the made claim as result. This link can be used in other claims (in channels of other Ssids for instance) as attestation.
+Adds a claim with the given data in it to the channel of the given ssid. The given data should be a JSON object with a list of key:value pairs in which the keys are predicates and the values the objects. A connector also stores this in a nested way as one json data object. Note: you will not be able to reference, attest and thus verify single nested claims. Storing a claim on a platform can take some time, dependent on the platform used. Therefor this method is asynchronous and returns a promise. If no error occurred the resolve function receives a link to the made claim as result. This link can be used in other claims (in channels of other Ssids for instance) as attestation.
 
 ```
-claim(session, data, callback)
-```
-
-Example:
-```
-discipl.claim(session, {'need':'beer'}, function (result, err) {
-	if(!err) {
-		console.log("Claim registered: "+result)
-	} else {
-		console.log("Failed to register claim: "+err);
-	}
-})
-```
-
-### `link`
-Creates a link to the given claim to be used in attestations to be made by the current Ssid set in the given session. The claim can be a reference or a claim (any JSON-LD object with a single DID as subject)
-and should be available in the platform used by the given connector indication (the connector name) though this is not enforced. Note, as the claim, attest, verify and revoke methods accept links in their arguments
-you probably don't need to use this method.
-```
-link(connector, claim)
+async claim(ssid, data)
 ```
 
 ###	`attest`
-Creates a simple attestation using a given predicate and claim link (as returned by the link method). In itself this is the same as making the Ssid set in the given session a claim that includes the given link.
-It is a shorthand for: claim(session, {predicate:link}, ...). See also the description at the claim method. To make more complex attestations, holding extra information in relation to the attestation, you can simply use the claim method with links as objects in relation
+Creates a simple attestation using a given predicate and link. In itself this is the same as making the given ssid make a claim that includes the given link.
+It is a shorthand for: claim(ssid, {predicate:link}, ...). See also the description at the claim method. To make more complex attestations, holding extra information in relation to the attestation, you can simply use the claim method with links as objects in relation
 to given predicates.
 
 ```
-attest(session, predicate, link, callback)
+async attest(ssid, predicate, link)
 ```
 
 ### `verify`
@@ -167,46 +118,33 @@ Let's you verify whether a given claim is attested by one of a given set of acto
 This method returns false if either the claim or all matching attestations are revoked.
 
 ```
-verify(claim, predicate, ssids[])
+async verify(link, predicate, ssids[])
 ```
 
 ### `get`
-Returns the claim as a JSON-LD object the given link links to. The session object is optional but may be needed if the information retrieval is permissioned in which case the current Ssid set is used for identification.
+Returns the claim as a JSON-LD object the given link links to. The ssid object is optional but may be needed if the information retrieval is permissioned in which case the ssid is used for identification.
 
 ```
-get(link, (session))
+async get(link, (ssid))
 ```
 
-### `export`
-exports linked claim data, starting at the first claim in the channel of the given DID or claim link as reference, following links to other channels which get exported in a nested dataset also and so on. When giving a DID, the whole channel is read. When giving a link to a claim, only that claim is processed. The export stops at circular references or at the given depth level. You can use this method again to expand the exported dataset even further. Just as like with the get() method, retrieving infrormation that is permissioned may require identification for which the Ssid set in a given session object may be used. You can expand using a different ssid.
+### `exportLD`
+exports linked claim data, starting at the first claim in the channel of the given DID or claim link as reference, following links to other channels which get exported in a nested dataset also and so on. When giving
+a DID, the whole channel is read. When giving a link to a claim, only that claim is processed. The export stops at circular references or at the given depth level. You can use this method again to expand the exported
+dataset even further. Just as like with the get() method, retrieving infrormation that is permissioned may require identification for which the given ssid may be used. You can expand using
+a different ssid.
 
 The exported dataset is a JSON object containing a list of JSON objects containing an exported claim with a link as key. The claim itself, is a JSON object that can contain expanded or unexpanded links. unexpanded links contain special values indicating the reason that the link was not expanded which can be eiter:
 
-- MAX-DEPTH-REACHED 	: the case in which the given export depth was reached
-- NOT_PERMITTED 		: the case in which the platform requires a current ssid set in a given session object to identify itself with a private key and this ssid was not set or not permitted to access the linked claim
-- NOT_ACCESSIBLE		: the case in which the linked claim is not accessible, because (a proper part of) the platform is not available
-- NOT_FOUND			: the case in which the linked claim could not be found (while the platform seems to be available in a sufficient way)
-
-Dependent on the reason, further expansion of the export can be achieved.
-
-### `export`
-exports linked claim data, starting at the first claim in the channel of the given DID or claim link as reference, following links to other channels which get exported in a nested dataset also and so on. When giving
-a DID, the whole channel is read. When giving a link to a claim, only that claim is processed. The export stops at circular references or at the given depth level. You can use this method again to expand the exported
-dataset even further. Just as like with the get() method, retrieving infrormation that is permissioned may require identification for which the Ssid set in a given session object may be used. You can expand using
-a different ssid.
-
-The exported dataset is a JSON object containing a list of JSON objects containing an exported claim with a link as key. The claim itself, is a JSON object that can contain expanded or unexpanded links. unexpanded links
-contain special values indicating the reason that the link was not expanded which can be eiter:
-
 MAX-DEPTH-REACHED 	: the case in which the given export depth was reached
-NOT_PERMITTED 		: the case in which the platform requires a current ssid set in a given session object to identify itself with a private key and this ssid was not set or not permitted to access the linked claim
+NOT_PERMITTED 		: the case in which the platform requires a given ssid to identify itself with a private key and this ssid was not set or not permitted to access the linked claim
 NOT_ACCESSIBLE		: the case in which the linked claim is not accessible, because (a proper part of) the platform is not available
 NOT_FOUND			: the case in which the linked claim could not be found (while the platform seems to be available in a sufficient way)
 
 Dependent on the reason, further expansion of the export can be achieved.
 
 ```
-export(reference, depth, (session))
+async exportLD(reference, (depth=3), (ssid=null), (visitedStack=[]))
 ```
 
 Example export (Note this is from an earlier version):
@@ -215,8 +153,15 @@ Example export (Note this is from an earlier version):
 ```
 
 ###	`revoke`
-Let's the actor belonging to the Ssid set in the given session effectively revoke claims it made earlier. Most times, the platforms revoke through additional claims denoting an earlier claim as being "revoked". You can not rely on effectively revoking such revoke-claims through this method.
+Let's the actor belonging to the given ssid  effectively revoke claims it made earlier. Most times, the platforms revoke through additional claims denoting an earlier claim as being "revoked". You can not rely on effectively revoking such revoke-claims through this method.
 
 ```
-revoke(session, link)
+async revoke(ssid, link)
+```
+
+### `subscribe`
+returns a promise with which you can effectively subscribe on the event that a new claim is added to the channel of the given ssids
+
+```
+async subscribe(ssid)
 ```
