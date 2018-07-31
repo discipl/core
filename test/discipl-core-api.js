@@ -3,13 +3,141 @@ let vows = require('vows')
 let assert = require('assert')
 let rewire = require("rewire")
 let discipl = rewire('../index.js')
+let tmpSsid = null
+let tmpLink = null
+let tmpLink2 = null
 let suite = vows.describe('discipl-core-api').addBatch({
-  'A Discipl Core API ' : {
-    'can use discipl links like: link:discipl:memory1234 ' : {
-      topic : 'link:discipl:memory1234',
-      'internally to obtain the connector name and reference from the link ' : function (topic) {
-        assert(discipl.__get__('splitLink')(topic), {'connector':'memory','reference':'1234'})
+  'A Discipl Core API synchronously ' : {
+    'can load a connector module like discipl-core-memory' : {
+      topic : 'memory',
+      'once when needed and retrieve it' : function (topic) {
+        assert.equal(discipl.getConnector(topic).getName(), topic)
+      },
+      'and retrieve it multiple times' : function (topic) {
+        assert.equal(discipl.getConnector(topic).getName(), topic)
+      },
+      'and inject itself into the module' : function (topic) {
+        assert.equal(discipl.getConnector(topic).discipl, discipl)
       }
+    },
+    'can be used to get links ' : {
+      topic : {'connector':discipl.getConnector('memory'),'did':'IN33DB33R'},
+      ' internally from a ssid and claim reference (a string) ' : function (topic) {
+        assert.equal(discipl.__get__('getLink')(topic,'123456789'),'link:discipl:memory:123456789')
+      },
+      ' internally from a ssid and claim (JSON) ' : function (topic) {
+        assert.equal(discipl.__get__('getLink')(topic,{'need':'beer'}),'link:discipl:memory:xF5Q7KbSEwork2sDv4UZvxtWORyLNfsBCit4dQq3/6k0tjeKDoP/s9oD6A+OOYSg')
+      },
+      ' internally though null objects as claim will resolve as a null value as link' : function (topic) {
+        assert.equal(discipl.__get__('getLink')(topic, null), null)
+      }
+    },
+    'can use discipl links like: link:discipl:memory:1234 ' : {
+      topic : 'link:discipl:memory:1234',
+      'internally to obtain the connector name and reference from the link ' : function (topic) {
+        assert.equal(JSON.stringify(discipl.__get__('splitLink')(topic)), JSON.stringify({'connector':'memory','reference':'1234'}))
+      },
+      'internally to check if they are valid ' : function (topic) {
+        assert.equal(discipl.__get__('isValidLink')(topic), true)
+      },
+      'internally to check if they are syntactically invalid ' : function (topic) {
+        assert.equal(discipl.__get__('isValidLink')(topic.replace(':','.')), false)
+      },
+      'internally to check if they are semantically invalid (the connector name part) ' : function (topic) {
+        assert.equal(discipl.__get__('isValidLink')(topic.replace('memory','discipl-core')), false)
+      }
+    },
+  }
+}).addBatch({
+  'A Discipl Core API asynchronously can retrieve a new ssid' : {
+      topic : function () {
+        vows = this
+        discipl.newSsid('memory').then(function (res) {
+          tmpSsid = res
+          vows.callback(null, res)
+        }).catch(function (err) {
+          vows.callback(err, null)
+        })
+      },
+      ' returns a proper ssid object with different large random strings as keys, a did and connector object' : function (err, ssid) {
+        assert.equal(err, null)
+        assert.equal(typeof ssid.pubkey, 'string')
+        assert.equal(ssid.pubkey.length , 88)
+        assert.equal(typeof ssid.privkey, 'string')
+        assert.equal(ssid.privkey.length, 88)
+        assert.notEqual(ssid.pubkey, ssid.privkey)
+        assert.equal(tmpSsid, ssid)
+        assert.equal(ssid.did, 'did:discipl:memory:'+ssid.pubkey)
+        assert.equal(ssid.connector.getName(), 'memory')
+      },
+    }
+}).addBatch({
+  'A Discipl Core API asynchronously can add a first claim to some new channel through a claim() method which' : {
+    topic : function () {
+      vows = this
+      console.log('tmpSsid:'+tmpSsid)
+      discipl.claim(tmpSsid, {'need':'beer'}).then(function (res) {
+        tmpLink = res
+        vows.callback(null, res)
+      }).catch(function (err) {
+        vows.callback(err, null)
+      })
+    },
+    ' returns a valid link to the claim' : function (err, link) {
+        assert.equal(err, null)
+        console.log("Link: "+link)
+        assert.equal(typeof link, 'string')
+        assert.equal(link.length , 108)
+        assert.equal(tmpLink, link)
+        assert.equal(discipl.__get__('isValidLink')(link), true)
+    }
+  }}).addBatch({
+  'A Discipl Core API asynchronously can retrieve a first claim that is referenced in a link given to a get() method which' : {
+    topic : function () {
+      vows = this
+      discipl.get(tmpLink).then(function (res) {
+        vows.callback(null, res)
+      }).catch(function (err) {
+        vows.callback(err, null)
+      })
+    },
+    ' returns a result object with the data and a link to the previous claim in the channel that equals null if it is the first claim in the channel' : function (err, res) {
+        assert.equal(err, null)
+        assert.equal(JSON.stringify(res.data), JSON.stringify({'need':'beer'}))
+        assert.equal(res.previous, null)
+    }
+  }}).addBatch({
+  'A Discipl Core API asynchronously can add another claim to some existing channel through a claim() method which' : {
+    topic : function () {
+      vows = this
+      discipl.claim(tmpSsid, {'need':'u'}).then(function (res) {
+        tmpLink2 = res
+        vows.callback(null, res)
+      }).catch(function (err) {
+        vows.callback(err, null)
+      })
+    },
+    ' returns a reference to the claim' : function (err, link) {
+        assert.equal(err, null)
+        console.log("Link2: "+link)
+        assert.equal(typeof link, 'string')
+        assert.equal(link.length , 108)
+        assert.equal(tmpLink2, link)
+    }
+  }}).addBatch({
+  'A Discipl Core API asynchronously can retrieve a second claim that is referenced in a link given to a get() method which' : {
+    topic : function () {
+      vows = this
+      discipl.get(tmpLink2).then(function (res) {
+        vows.callback(null, res)
+      }).catch(function (err) {
+        vows.callback(err, null)
+      })
+    },
+    ' returns a result object with the data and a link to the previous (first) claim' : function (err, res) {
+        assert.equal(err, null)
+        assert.equal(JSON.stringify(res.data), JSON.stringify({'need':'u'}))
+        assert.equal(res.previous, tmpLink)
     }
   }
 }).export(module)

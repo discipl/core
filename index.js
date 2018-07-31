@@ -19,8 +19,9 @@ var disciplCoreConnectors = []
  */
 const initializeConnector = (connector) => {
   if(!Object.keys(disciplCoreConnectors).includes(connector)) {
-    disciplCoreConnectors[connector] = require(CONNECTOR_MODULE_PREFIX+connector)
-    disciplCoreConnectors[connector].setDisciplAPI(this)
+    let connectorModuleClass = require(CONNECTOR_MODULE_PREFIX+connector)
+    disciplCoreConnectors[connector] = new connectorModuleClass()
+    disciplCoreConnectors[connector].setDisciplAPI(module.exports)
   }
 }
 
@@ -29,7 +30,7 @@ const initializeConnector = (connector) => {
  */
 const getConnector = (connector) => {
   initializeConnector(connector)
-  return disciplconnectors[connector]
+  return disciplCoreConnectors[connector]
 }
 
 /**
@@ -43,15 +44,18 @@ const splitLink = (link) => {
 }
 
 /**
- * returns a link string for the gieven claim in the channel of the given ssid
+ * returns a link string for the given claim in the channel of the given ssid. claim can be a string in which case it needs to be a connector specific reference string, or it is a object holding claim(s) of which the hash of the stringified version is used as reference
  */
 const getLink = (ssid, claim) => {
-  let connector = ssid.connector.getName()
-  if(typeof claim === 'string') {
-    return LINK_PREFIX+connector+DID_DELIMITER+claim
-  } else {
-    return LINK_PREFIX+connector+DID_DELIMITER+getHash(ssid, claim);
+  if(claim) {
+    let connector = ssid.connector.getName()
+    if(typeof claim == 'string') {
+      return LINK_PREFIX+connector+DID_DELIMITER+claim
+    } else {
+      return LINK_PREFIX+connector+DID_DELIMITER+getHash(ssid, claim)
+    }
   }
+  return null
 }
 
 /**
@@ -83,6 +87,12 @@ const getHash = (ssid, data) => {
   return CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, ssid.did))
 }
 
+const expandSsid = (ssid) => {
+  let splitted = ssid.did.split(DID_DELIMITER)
+  ssid['connector'] = getConnector(splitted[2])
+  ssid['pubkey'] = splitted[3]
+}
+
 /**
  * Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for
  */
@@ -95,10 +105,12 @@ const newSsid = async (connector) => {
 }
 
 /**
- * Adds a claim to the (end of the) channel of the given claim.
+ * Adds a claim to the (end of the) channel of the given ssid (containing the did and probably privkey as only requirement). Returns a link to this claim.
  */
 const claim = async (ssid, data) => {
-  return ssid.connector.claim(ssid, data)
+  expandSsid(ssid)
+  let reference = await ssid.connector.claim(ssid, data)
+  return getLink(ssid, reference)
 }
 
 /**
@@ -118,6 +130,7 @@ const attest = async (ssid, predicate, link) => {
 const verify = async (predicate, link, ssids, all = false) => {
   let result = []
   for(ssid in ssids) {
+    expandSsid(ssid)
     let reference = await ssid.connector.verify(ssid, {predicate:link})
     if(reference) {
       if(verify(REVOKE_PREDICATE, getLink(ssid, reference), [ssid]) == null) {
@@ -146,9 +159,9 @@ const verify = async (predicate, link, ssids, all = false) => {
 const get = async (link, ssid = null) => {
   let {connector, reference}  = splitLink(link)
   let conn = getConnector(connector)
-  let {data, previous} = await conn.get(reference, ssid)
-  let prevlink = LINK_PREFIX+conn.getName()+DID_DELIMITER+previous
-  return {data, prevlink}
+  let result = await conn.get(reference, ssid)
+  result.previous = getLink({'connector':conn}, result.previous)
+  return result
 }
 
 /**

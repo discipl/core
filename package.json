@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "assert": "1.4.1",
+    "discipl-core-memory": "git://github.com/discipl/discipl-core-memory",
     "rewire": "4.0.1",
     "vows": "0.8.2"
   }
