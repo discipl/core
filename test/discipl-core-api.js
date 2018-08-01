@@ -4,6 +4,8 @@ let assert = require('assert')
 let rewire = require("rewire")
 let discipl = rewire('../index.js')
 let tmpSsid = null
+let tmpAttestorSsid = null
+let tmpAttestorSsid2 = null
 let tmpLink = null
 let tmpLink2 = null
 let suite = vows.describe('discipl-core-api').addBatch({
@@ -138,6 +140,53 @@ let suite = vows.describe('discipl-core-api').addBatch({
         assert.equal(err, null)
         assert.equal(JSON.stringify(res.data), JSON.stringify({'need':'u'}))
         assert.equal(res.previous, tmpLink)
+    }
+  }}).addBatch({
+  'A Discipl Core API asynchronously can attest a second claim in a channel in a new other channel through an attest() method which' : {
+    topic : function () {
+      vows = this
+      discipl.newSsid('memory').then(function (res) {
+        tmpAttestorSsid = res
+        discipl.attest(res, 'agree', tmpLink2).then(function (res) {
+          discipl.get(res).then(function (res) {
+            vows.callback(null, res)
+          })
+        })
+      }).catch(function (err) { vows.callback(err, null) })
+    },
+    ' returns the link to the attestation with which the attestation can be retrieved ' : function (err, res) {
+        assert.equal(err, null)
+        assert.equal(JSON.stringify(res.data), JSON.stringify({'agree':tmpLink2}))
+        assert.equal(res.previous, null)
+        console.log(discipl.getConnector('memory'))
+    }
+  }
+}).addBatch({
+  'A Discipl Core API asynchronously can verify whether a claim has been attested' : {
+    topic : function () {
+      vows = this
+      console.log(discipl.getConnector('memory'))
+      discipl.verify('agree', tmpLink2, [tmpSsid, tmpAttestorSsid2, {'did':'did:discipl:memory:1234'}, tmpAttestorSsid]).then(function (res) {
+        console.log(discipl.getConnector('memory'))
+        vows.callback(null, res)
+      }).catch(function (err) { vows.callback(err, null) })
+    },
+    ' verify() returns ssid of first attesttor in the given list and does not throw error on given null or non existing ssids' : function (err, res) {
+console.log(discipl.getConnector('memory'))
+        assert.equal(err, null)
+        assert.equal(res, tmpAttestorSsid)
+    }
+  }}).addBatch({
+  'A Discipl Core API asynchronously can verify whether a claim has not been attested' : {
+    topic : function () {
+      vows = this
+      discipl.verify('disagree', tmpLink2, [tmpSsid, tmpAttestorSsid2, {'did':'did:discipl:memory:1234'}, tmpAttestorSsid]).then(function (res) {
+        vows.callback(null, res)
+      }).catch(function (err) { vows.callback(err, null) })
+    },
+    ' verify() returns null and does not throw error on given null or non existing ssids' : function (err, res) {
+        assert.equal(err, null)
+        assert.equal(res, null)
     }
   }
 }).export(module)

@@ -77,7 +77,8 @@ const isValidLink = (link) => {
 const getSsidOfLinkedClaim = async (link) => {
   let {connector, reference} = splitLink(link)
   let conn = getConnector(connector)
-  return await conn.getSsidOfClaim(reference)
+  let ssid = await conn.getSsidOfClaim(reference)
+  return {'did':DID_PREFIX+conn.getName()+DID_DELIMITER+ssid.pubkey}
 }
 
 /**
@@ -117,7 +118,9 @@ const claim = async (ssid, data) => {
  * Adds an attestation claim of the claim the given link refers to using the given predicate in the channel of the given ssid
  */
 const attest = async (ssid, predicate, link) => {
-  return claim(ssid, {predicate:link})
+  let attest = {}
+  attest[predicate] = link
+  return claim(ssid, attest)
 }
 
 /**
@@ -129,12 +132,16 @@ const attest = async (ssid, predicate, link) => {
  */
 const verify = async (predicate, link, ssids, all = false) => {
   let result = []
-  for(ssid in ssids) {
+  for(let i in ssids) {
+    let ssid = ssids[i]
+    if(!(ssid)) continue
     expandSsid(ssid)
-    let reference = await ssid.connector.verify(ssid, {predicate:link})
+    let attestation = {}
+    attestation[predicate] = link
+    let reference = await ssid.connector.verify(ssid, attestation)
     if(reference) {
-      if(verify(REVOKE_PREDICATE, getLink(ssid, reference), [ssid]) == null) {
-        if(verify(REVOKE_PREDICATE, link, [getSsidOfLinkedClaim(link)]) == null) {
+      if(await verify(REVOKE_PREDICATE, getLink(ssid, reference), [ssid]) == null) {
+        if(await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
           if(all) {
             result.push(ssid)
           }
@@ -145,7 +152,7 @@ const verify = async (predicate, link, ssids, all = false) => {
       }
     }
   }
-  if(result.count == 0)
+  if(result.length == 0)
     return null;
   return result;
 }
