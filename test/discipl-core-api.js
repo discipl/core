@@ -77,7 +77,6 @@ let suite = vows.describe('discipl-core-api').addBatch({
   'A Discipl Core API asynchronously can add a first claim to some new channel through a claim() method which' : {
     topic : function () {
       vows = this
-      console.log('tmpSsid:'+tmpSsid)
       discipl.claim(tmpSsid, {'need':'beer'}).then(function (res) {
         tmpLink = res
         vows.callback(null, res)
@@ -87,7 +86,6 @@ let suite = vows.describe('discipl-core-api').addBatch({
     },
     ' returns a valid link to the claim' : function (err, link) {
         assert.equal(err, null)
-        console.log("Link: "+link)
         assert.equal(typeof link, 'string')
         assert.equal(link.length , 108)
         assert.equal(tmpLink, link)
@@ -121,7 +119,6 @@ let suite = vows.describe('discipl-core-api').addBatch({
     },
     ' returns a reference to the claim' : function (err, link) {
         assert.equal(err, null)
-        console.log("Link2: "+link)
         assert.equal(typeof link, 'string')
         assert.equal(link.length , 108)
         assert.equal(tmpLink2, link)
@@ -158,21 +155,17 @@ let suite = vows.describe('discipl-core-api').addBatch({
         assert.equal(err, null)
         assert.equal(JSON.stringify(res.data), JSON.stringify({'agree':tmpLink2}))
         assert.equal(res.previous, null)
-        console.log(discipl.getConnector('memory'))
     }
   }
 }).addBatch({
   'A Discipl Core API asynchronously can verify whether a claim has been attested' : {
     topic : function () {
       vows = this
-      console.log(discipl.getConnector('memory'))
       discipl.verify('agree', tmpLink2, [tmpSsid, tmpAttestorSsid2, {'did':'did:discipl:memory:1234'}, tmpAttestorSsid]).then(function (res) {
-        console.log(discipl.getConnector('memory'))
         vows.callback(null, res)
       }).catch(function (err) { vows.callback(err, null) })
     },
     ' verify() returns ssid of first attesttor in the given list and does not throw error on given null or non existing ssids' : function (err, res) {
-console.log(discipl.getConnector('memory'))
         assert.equal(err, null)
         assert.equal(res, tmpAttestorSsid)
     }
