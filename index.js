@@ -21,7 +21,6 @@ const initializeConnector = (connector) => {
   if(!Object.keys(disciplCoreConnectors).includes(connector)) {
     let connectorModuleClass = require(CONNECTOR_MODULE_PREFIX+connector)
     disciplCoreConnectors[connector] = new connectorModuleClass()
-    disciplCoreConnectors[connector].setDisciplAPI(module.exports)
   }
 }
 
@@ -92,6 +91,7 @@ const expandSsid = (ssid) => {
   let splitted = ssid.did.split(DID_DELIMITER)
   ssid['connector'] = getConnector(splitted[2])
   ssid['pubkey'] = splitted[3]
+  return ssid
 }
 
 /**
@@ -180,42 +180,80 @@ const subscribe = async (ssid) => {
 }
 
 /**
+ * Helper method for exportLD which detects a value to be a ssid, did or link and returns the ssid and link (the one given or to the latest claim in a channel of a did/ssid) or null otherwise
+ * throws error when given a object intended to be a ssid but isn't
+ */
+const detectSsidLinkFromDidSsidOrLink = async (value) => {
+  let currentLink = null
+  let currentSsid = null
+  if(typeof value == 'string') {
+    if(isValidLink(value)) {
+      currentLink = value
+      currentSsid = await getSsidOfLinkedClaim(currentLink)
+    } else if(value.indexOf(DID_PREFIX) == 0) {
+      currentSsid = expandSsid({'did':value})
+      currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
+    } else {
+      return null
+    }
+  } else if(Object.keys(value).includes('did')) {
+    currentSsid = expandSsid(value)
+    currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
+  } else {
+    return null
+  }
+  return {'ssid':currentSsid, 'link':currentLink}
+}
+
+/**
  * Exports linked claim data starting with the claim the given link refers to.
  * Links contained in the data of the claim are exported also in a value alongside of the link and links in data of those claims are processed in a same way too etc.
  * By default, expansion like this is done at most three times. You can alter this depth of the export by setting the second argument. If the maximum depth is reached the exported data
  * will contain the value MAX_DEPTH_REACHED alongside of the link instead of an exported dataset. You can use this method to iteratively expand the dataset using the link that was not followed.
  * A claim is never exported twice; circulair references are not followed.
  */
-const exportLD = async (link, depth = 3, ssid = null, visitedStack = []) => {
-  let exportData = []
-  let previous = link
-  while(previous) {
-    let data = null
-    try {
-      let {d, p} = await get(previous, ssid)
-      data = d
-      previous = p
-    } catch(err) {
-      data = {previous, err};
-      previous = null;
+const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack = []) => {
+  let exportData = {}
+
+  let ssidlink = await detectSsidLinkFromDidSsidOrLink(SsidDidOrLink)
+  if(ssidlink == null) {
+    return SsidDidOrLink
+  }
+  let currentLink = ssidlink.link
+  let currentSsid = ssidlink.ssid
+
+  if(visitedStack.length >= maxdepth) {
+    return {SsidDidOrLink:MAX_DEPTH_REACHED}
+  } else {
+    visitedStack.push(currentLink)
+  }
+
+  exportData[currentSsid.did] = {}
+
+  let res = await get(currentLink, ssid)
+  if(res != null) {
+    data = res.data
+    if(res.previous && (SsidDidOrLink.indexOf(DID_PREFIX) == 0)) {
+      console.log('Get previous of channel'+res.previous)
+      exportData[currentSsid.did] = await exportLD(res.previous, maxdepth, ssid, visitedStack)
     }
+    exportData[currentSsid.did][currentLink] = {}
     for(elem in data) {
-      if(isValidLink(elem)) {
-        if(depth && !visitedStack.includes(elem)) {
-          depth--;
-          visitedStack.push(elem)
-          let ld = await exportLD(elem, depth, ssid, visitedStack)
-          elem = {elem, ld}
-          visitedStack.pop()
-          depth++;
-        } else {
-          elem = {elem, MAX_DEPTH_REACHED}
-        }
+      exportData[currentSsid.did][currentLink][elem] = {}
+      let value = data[elem]
+      try {
+        console.log('Getting export for..'+value)
+        exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
+        console.log('Got'+exportData[currentSsid.did][currentLink][elem])
+      } catch(err) {
+        exportData[currentSsid.did][currentLink][elem][value]={'export-error':err}
       }
     }
-    exportData.push(data)
+  } else {
+    exportData[currentSsid.did][currentLink] = 'NOT_FOUND'
   }
-  return exportData
+
+  return exportData;
 }
 
 /**

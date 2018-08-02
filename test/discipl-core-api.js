@@ -8,6 +8,7 @@ let tmpAttestorSsid = null
 let tmpAttestorSsid2 = null
 let tmpLink = null
 let tmpLink2 = null
+let tmpAttestLink = null
 let suite = vows.describe('discipl-core-api').addBatch({
   'A Discipl Core API synchronously ' : {
     'can load a connector module like discipl-core-memory' : {
@@ -17,9 +18,6 @@ let suite = vows.describe('discipl-core-api').addBatch({
       },
       'and retrieve it multiple times' : function (topic) {
         assert.equal(discipl.getConnector(topic).getName(), topic)
-      },
-      'and inject itself into the module' : function (topic) {
-        assert.equal(discipl.getConnector(topic).discipl, discipl)
       }
     },
     'can be used to get links ' : {
@@ -145,6 +143,7 @@ let suite = vows.describe('discipl-core-api').addBatch({
       discipl.newSsid('memory').then(function (res) {
         tmpAttestorSsid = res
         discipl.attest(res, 'agree', tmpLink2).then(function (res) {
+          tmpAttestLink = res
           discipl.get(res).then(function (res) {
             vows.callback(null, res)
           })
@@ -180,6 +179,18 @@ let suite = vows.describe('discipl-core-api').addBatch({
     ' verify() returns null and does not throw error on given null or non existing ssids' : function (err, res) {
         assert.equal(err, null)
         assert.equal(res, null)
+    }
+  }}).addBatch({
+  'A Discipl Core API asynchronously can export linked verifiable claim channels ' : {
+    topic : function () {
+      vows = this
+      discipl.exportLD(tmpAttestorSsid).then(function (res) {
+        vows.callback(null, res)
+      }).catch(function (err) { vows.callback(err, null) })
+    },
+    ' verify() returns null and does not throw error on given null or non existing ssids' : function (err, res) {
+        assert.equal(err, null)
+        assert.equal(JSON.stringify(res[tmpAttestorSsid.did][tmpAttestLink]['agree'][tmpSsid.did][tmpLink2]), JSON.stringify({need:'u'}))
     }
   }
 }).export(module)
