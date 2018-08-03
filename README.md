@@ -1,5 +1,41 @@
 
-## Discipl Core API
+## Discipl Core
+
+Discipl focuses on an evolved society in a needs based economy (a network economy of abundance / resource based economy) and tries to progress society to this by underpinning
+society with a DIstributed Collaborative Information PLatform. Needs (both demand and supply) are expressed anonymously by entities (people and things) and taken
+care of automaticly and for free as much as possible following law, regulations and policies, which contain the previously established solutions for conflicting needs. Conflicts are taken
+care of through timely and efficient convergent facilitation processes at multiple levels and which is mostly a guided dialogue between stakeholders.
+As a last resort it can end at the level of judicature. This proces can lead to alteration in policies and even law and regulations and therefore the automated servicing of needs.
+
+We care about all citizens deeply. This is the discipl pattern.
+
+We think organisations (both non-profit as for-profit sector) can progress to this future by embracing the Discipl Manifesto:
+
+1 We create sustainable, highly automated solutions that fulfil people’s needs;
+2 Solutions can be produced and installed relatively simply for (free of charge) use;
+3 Solutions are open source, having a Creative Commons licence or a GPL version 3.01;
+4 Solutions apply the Discipl Pattern;
+5 We respect the current legal frameworks
+
+There's a lot to do to make this work. The current world is not really incentivised to make this happen though the transition harbours great opportunities for conservative entities
+finding security in holdng on to this "old" world too. To experiment with the required technology we are creating a reference implementation of a software stack that could bootstrap this new world.
+
+Discipl Core is the most bottom layer of this giving vendor independent access to the world of (both personal as distributed) storage, self sovereign identification and authentication functionalities. It provides a single context dependent source of verifiable linked data channels kept in any platform that can hold such data (every platform with it's own specific characteristics).
+
+Even if you have a hard time accepting the vision above, Discipl Core is an innovative project that focuses on communication through personal claims of self sovereign entities as a
+lean, simple to use and learn technology that is the result of combining Linked Data, Open Data, Open Government, Verifiable Credential and Distributed Ledger concepts and trends
+without trying to reinvent wheels. Discipl Core is not a platform intended to rule them all, but it can be really handy when you need to support multiple platforms, make your
+users able to choose their own type of platform or wallet (if there are multiple to choose from that provide sufficient functionality: you decide). It can make your solution platform and vendor independent, make data portable (migrate from one to the other) and so on. You could even connect with legacy systems with it in a same way.
+
+Note that smart contracts are just automated responses for actors on the platforms that support them; where a platform supports maintaining a single truth, you can make all logic executed at client devices instead of on all nodes that form the platform's infrastructure. It is analog to database programming: you don't need it.
+
+Why would you use this?
+
+For instance: you can maintain, retrieve information on all supported (and suitable) platforms and have people use their verifiable credential solution of their own choice within a single implementation. This is handy for instance when giving tourists reduction or vote rights in return of attesting their stay at hoteliers that also can choose their own platform and method of identifying for enrolling in such service as it would allow them to pay their taxes in a more convenient automated way. It would also enable free open anonymous statistics with which more can be done in other use cases.
+
+But this is peanuts compared to what we're aiming at. It is experimental too though and is AS IS. Use it as you like.
+
+## The Discipl Core API
 
 This API is a javascript ES6 module intended for client side usage. It is intended to run in NodeJS, React Native (through expo.io) and JS engines in webbrowsers. With it you can let actors create self sovereign id's, let them make claims about themselves, attest claims of others, verify claim attestations and possibly revoke claims. The self sovereign id is a string with DID syntax (https://github.com/WebOfTrustInfo/rebooting-the-web-of-trust-fall2017/blob/master/draft-documents/did-primer.md) denoting a supported platform which is any platform that supports storing claims in relation to a public id, contained in the DID, and enforces that only a holder of a corresponding private key can make claims in relation to that id. The claims in relation to a particular DID form a channel and can link to claims in other channels. These claims are attestations. The API contains a method to see whether a particular claim is attested by one or more particular other DID's. Further it contains functions to retrieve claims in channels, monitor channels and even traverse or fetch all data in the linked channels.
 
@@ -39,7 +75,7 @@ IPV8			| hybrid			| planned		| discipl-core-ipv8				| yes			 | <0.1s 	| possible
 Validana		| hybrid managed	| planned		| discipl-core-validana			| possible		 | 1s		| yes, manual	| if used in a permissioned way may be usable for PII if conforming to GDPR
 Zenroom			| hybrid			| planned		| discipl-core-zenroom			| yes			 | <0.1s	| no, local svc	| discipl-zenroom integration; can be used to have discipl functionality within smart contract vm's that embed zenroom and is using the DECODE platform
 Leopard Ledger	| hybrid managed	| planned		| discipl-core-leopardledger	| possible		 | 1s		| yes, manual	| if used in a permissioned way may be usable for PII if conforming to GDPR
-IRMA			| local wallet		| planned		| discipl-core-irma				| yes			 | <0.1s	| yes, manual	| scheme of public keys and attestations is governed in a centralised way
+IRMA			| local wallet		| planned		| discipl-core-irma				| yes			 | <0.1s	| yes, manual	|
 Sovrin			| local wallet		| investigated	| discipl-core-sovrin			| yes			 |	?		| yes, manual 	| unknown
 uPort			| local wallet		| planned		| discipl-core-uport			| yes			 |	?		| yes, manual	| might require fees in future
 lbtc			| public ledger		| unknown		| discipl-core-lbtc				| no			 | <0.1s	| yes, manual	| requires fees
@@ -161,6 +197,7 @@ async revoke(ssid, link)
 
 ### `subscribe`
 returns a promise with which you can effectively subscribe on the event that a new claim is added to the channel of the given ssids
+Note not yet implemented
 
 ```
 async subscribe(ssid)
