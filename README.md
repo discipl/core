@@ -4,12 +4,10 @@
 Discipl focuses on an evolved society in a needs based economy (a network economy of abundance / resource based economy) and tries to progress society to this by underpinning
 society with a DIstributed Collaborative Information PLatform. Needs (both demand and supply) are expressed anonymously by entities (people and things) and taken
 care of automaticly and for free as much as possible following law, regulations and policies, which contain the previously established solutions for conflicting needs. Conflicts are taken
-care of through timely and efficient convergent facilitation processes at multiple levels and which is mostly a guided dialogue between stakeholders.
-As a last resort it can end at the level of judicature. This proces can lead to alteration in policies and even law and regulations and therefore the automated servicing of needs.
+care of through timely and efficient convergent facilitation processes, possible at multiple levels and which is mostly a human-guided dialogue between stakeholders.
+As a last resort conflicts can put to an end at the level of judicature. These processes can lead to alteration in policies and even law and regulations and therefore the automated servicing of needs. This is what we call the Discipl Pattern. An embedded agile "polder-model" 3.0, based upon a better consensus model that takes everyone seriously.
 
-We care about all citizens deeply. This is the discipl pattern.
-
-We think organisations (both non-profit as for-profit sector) can progress to this future by embracing the Discipl Manifesto:
+We care about all beings deeply no matter their peculiarities, capabillities or beliefs and so on. We attend to the non controversial essence of the needs of all where possible but are always confident we can find solutions that work for all. We think organisations (both non-profit as for-profit sector) can progress to this future by embracing the Discipl Manifesto:
 
 1 We create sustainable, highly automated solutions that fulfil people’s needs;
 2 Solutions can be produced and installed relatively simply for (free of charge) use;
@@ -17,23 +15,24 @@ We think organisations (both non-profit as for-profit sector) can progress to th
 4 Solutions apply the Discipl Pattern;
 5 We respect the current legal frameworks
 
-There's a lot to do to make this work. The current world is not really incentivised to make this happen though the transition harbours great opportunities for conservative entities
-finding security in holdng on to this "old" world too. To experiment with the required technology we are creating a reference implementation of a software stack that could bootstrap this new world.
+There's a lot to do to make this work, even as proof of concept. The current world is not really incentivised to make this happen, though the transition harbours great opportunities for conservative entities finding security in holding on to this "old" world too. To experiment with the required technology we are creating a reference implementation of a software stack that could bootstrap this new world.
 
-Discipl Core is the most bottom layer of this giving vendor independent access to the world of (both personal as distributed) storage, self sovereign identification and authentication functionalities. It provides a single context dependent source of verifiable linked data channels kept in any platform that can hold such data (every platform with it's own specific characteristics).
+Discipl Core the most bottom layer of this stack, implementing vendor independent (both personal as distributed) storage, self sovereign identification and authentication functionalities. It provides a single context dependent source of verifiable linked data channels kept in any platform that can hold such data (every platform with it's own specific characteristics), and
+use those platform in a hybrid way.
 
-Even if you have a hard time accepting the vision above, Discipl Core is an innovative project that focuses on communication through personal claims of self sovereign entities as a
-lean, simple to use and learn technology that is the result of combining Linked Data, Open Data, Open Government, Verifiable Credential and Distributed Ledger concepts and trends
-without trying to reinvent wheels. Discipl Core is not a platform intended to rule them all, but it can be really handy when you need to support multiple platforms, make your
+On itself, Discipl Core is an innovative project that focuses on communication through personal claims of self sovereign entities as a lean, simple to use and learn technology that is the result of combining Linked Data, Open Data, Open Government, Verifiable Credential and Distributed Ledger concepts and trends without trying to reinvent wheels. Discipl Core is not a platform intended to rule them all, but it can be really handy when you need to support multiple platforms, make your
 users able to choose their own type of platform or wallet (if there are multiple to choose from that provide sufficient functionality: you decide). It can make your solution platform and vendor independent, make data portable (migrate from one to the other) and so on. You could even connect with legacy systems with it in a same way.
 
-Note that smart contracts are just automated responses for actors on the platforms that support them; where a platform supports maintaining a single truth, you can make all logic executed at client devices instead of on all nodes that form the platform's infrastructure. It is analog to database programming: you don't need it.
+Note thhe absence of smart contracts. Smart contracts are just automated responses for actors on the platforms that support smart contracts; where a platform supports maintaining a single truth, you can make all logic executed at client devices instead of executing this redundantly on all nodes that form the platform's infrastructure. It is analog to database programming: you don't need it, though of course you could use it, using the platform as a cloud. With the Discipl Pattern, we envision laws expressed in natural language sufficiently labelled to be interpreted as code (Law as code instead of Code as law). Decisions are never done by computers or AI. We hold on to an open world assumption and this means holding on to the assumption that reality is more complex than you can describe in laws or code. Judicature already knows this (or it should). Big Data is almost always biased too. We hold on to the established concept in that we resolve conflicts with mutual agreements which all stakeholders genuinely accept, the produce of real dialogue about the non controlversial essence of what drives us in our opinions and beliefs. Where there's no conflict in needs, then there's nothing to resolve or to do for humans other than automating it.
 
-Why would you use this?
+Why you would use Discipl Core?
 
-For instance: you can maintain, retrieve information on all supported (and suitable) platforms and have people use their verifiable credential solution of their own choice within a single implementation. This is handy for instance when giving tourists reduction or vote rights in return of attesting their stay at hoteliers that also can choose their own platform and method of identifying for enrolling in such service as it would allow them to pay their taxes in a more convenient automated way. It would also enable free open anonymous statistics with which more can be done in other use cases.
+For instance: you can maintain, retrieve information on all supported (and suitable) platforms and have people use their verifiable credential solution of their own choice within a single implementation. This is handy for instance when giving tourists reduction or vote rights in return of attesting their stay at hoteliers that also can choose their own platform and method of identifying for enrolling in such service as it would allow them to pay their taxes (we all should have agreed with as being part of the community of this country) in a more convenient automated way. One of these tourists could be a teacher from Amsterdam who after expressing his need for self actualisation would have automatically found and enrolled in getting a benefit specifically applicable for his situation. He would be able to easily echange it's old Diesel car for an e-bike using a special one time grant after his drivers license was revoked due to having problems with his sight, a decision he does not accept however so a process could be started to handle this conflict automaticly. It would also enable free open anonymous statistics with which more can be done in other use cases. It would probably give rise to open decentralised free marketplaces and social media. All this using Discipl (or compatible apps; everyone can build upon it for free).
 
-But this is peanuts compared to what we're aiming at. It is experimental too though and is AS IS. Use it as you like.
+But this is peanuts compared to what we're aiming at. Taxes, benefits, grants, all things money; in the end all this will not be neccasary in the society we envision.  
+It is experimental too though and is AS IS. Use it as you like. We never promised you a rose garden.
+
+Enough mumbo jumbo ? ;-)
 
 ## The Discipl Core API
 
@@ -43,6 +42,7 @@ In essence the API is therefore a linked data client that can crawl over all use
 
 Discipl Core is meant to be lean and simple and it does not impose usage of metadata on data. It only enforces and therefore structures linked data to have always self sovereign id's as subject of the linked data triples and that the holder of a private key related to this self sovereign as public key is the only one that can store such triples, we call claims. It therefore wil not neccasarily comply fully with standards like the verifiable credentials specification but will follow it's own path as it's usage is more broad than only verifiable credentials. It may provide access to
 functionality provided by platforms that do comply with the verifiable crendential standards.
+
 
 ## Terminology
 
@@ -75,18 +75,19 @@ IPV8			| hybrid			| planned		| discipl-core-ipv8				| yes			 | <0.1s 	| possible
 Validana		| hybrid managed	| planned		| discipl-core-validana			| possible		 | 1s		| yes, manual	| if used in a permissioned way may be usable for PII if conforming to GDPR
 Zenroom			| hybrid			| planned		| discipl-core-zenroom			| yes			 | <0.1s	| no, local svc	| discipl-zenroom integration; can be used to have discipl functionality within smart contract vm's that embed zenroom and is using the DECODE platform
 Leopard Ledger	| hybrid managed	| planned		| discipl-core-leopardledger	| possible		 | 1s		| yes, manual	| if used in a permissioned way may be usable for PII if conforming to GDPR
-IRMA			| local wallet		| planned		| discipl-core-irma				| yes			 | <0.1s	| yes, manual	|
+IRMA			| local wallet		| planned		| discipl-core-irma				| yes			 | <0.1s	| yes, manual	| using diva and decentralised scheme manager on other discipl supported platform
 Sovrin			| local wallet		| investigated	| discipl-core-sovrin			| yes			 |	?		| yes, manual 	| unknown
 uPort			| local wallet		| planned		| discipl-core-uport			| yes			 |	?		| yes, manual	| might require fees in future
 lbtc			| public ledger		| unknown		| discipl-core-lbtc				| no			 | <0.1s	| yes, manual	| requires fees
 rchain			| public ledger		| unknown		| discipl-core-rchain			| no			 |	?		| yes, manual	| requires fees
+nlx         |                 |           | discipl-core-nlx        |          |      |             |
 legacy			| hybrid managed	| planned		| discipl-core-legacy			| possible		 | depends	| yes, manual 	| interfaces with legacy datasources that implement REST interface
 
-Note this library and all connectors are in early experimental development. Do not use in production.
+Note this library and all connectors are in early experimental development. Do not use in production (yet).
 
 ## Basic Usage
 
-This ES6 module will export the main interface to use discipl-core. It will automaticly require modules when needed. Of course it doesn't install them for you so make sure all connector modules for platforms you want to support are installed. Make sure you configure the connector modules within your code before using the discipl core api or rely on the default operation that the connector uses a discipl node (here). By default, this library expects a local discipl node but you can set a custom URL. The platforms that are made available through this node will be automaticly required and configured.
+This ES6 module will export the main interface to use discipl-core. It will automaticly require modules when needed. Of course it doesn't install them for you so make sure all connector modules for platforms you want to support are installed. Make sure you configure the connector modules within your code before using the discipl core api or rely on the default operation that the connector uses a discipl node (here). By default, this library expects a local discipl node but you will be able to set a custom URL. The platforms that are made available through this node will be automaticly required and configured.
 
 Where needed you create a self sovereign identity for a given platform, mainly consisting of a public-private key where the public key is contained in a correspondig DID. You are responsible for persisting these keys yourself if neccasary. If you want to use a previously created identity, you must set it. Sometimes however, you do not have to set a identity for instance if you are only going to read information from a public platform.
 
@@ -123,18 +124,27 @@ See examples folder for more example code (coming soon)
 
 ## API
 
+### `getConnector`
+loads and retrieves the discipl connector object with the given name. You only need this when you'll have to configure it differently than as is done by default before
+doing other actions with this API. The name 'ipv8' would load and return the discipl-core-ipv8 connector. It throws an error if it does not succeed in this.
+
+```
+getConnector(name)
+```
+
 ### `newSsid`
 Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for.
-This action will open up a channel tied to this DID on the platform. Nobody will know about this
+This action will open up a channel tied to this DID on the platform. Nobody will probably know about this
 however until a first claim is published publicly (depends on platform). The connector name should be given as argument.
 By default this is to be the same as the part after "discipl-core-" in the name of the connector repository in github. So for instance, for IOTA it is "iota" (lowercase).
+connectors may store extra information in this object but you'll never have to care about this. Setting the private key is also only required when making a claim of course.
 
 ```
 newSsid(connector)
 ```
 
 ### `claim`
-Adds a claim with the given data in it to the channel of the given ssid. The given data should be a JSON object with a list of key:value pairs in which the keys are predicates and the values the objects. A connector also stores this in a nested way as one json data object. Note: you will not be able to reference, attest and thus verify single nested claims. Storing a claim on a platform can take some time, dependent on the platform used. Therefor this method is asynchronous and returns a promise. If no error occurred the resolve function receives a link to the made claim as result. This link can be used in other claims (in channels of other Ssids for instance) as attestation.
+Adds a claim with the given data in it to the channel of the given ssid. The given data should be a JSON object with a list of key:value pairs in which the keys are predicates and the values the objects. A connector also stores this in a nested way as one json data object. Note: you will not be able to reference, attest and thus verify single nested claims. Storing a claim on a platform can take some time, dependent on the platform used. Therefor this method is asynchronous and returns a promise. If no error occurred, the resolve function receives a link to the new claim as result. This link can be used in other claims (in channels of other Ssids for instance) as attestation.
 
 ```
 async claim(ssid, data)
@@ -150,32 +160,28 @@ async attest(ssid, predicate, link)
 ```
 
 ### `verify`
-Let's you verify whether a given claim is attested by one of a given set of actors (as identified through the given ssid's) using the given predicate and returns true if so. You can also just give one ssid instead of a list.
-This method returns false if either the claim or all matching attestations are revoked.
+Let's you verify whether a given claim is attested by one of a given set of actors (as identified through the given ssid's) using the given predicate and returns true if so. You can also just give one ssid instead of a list. This method returns false if either the claim or all matching attestations are revoked.
 
 ```
 async verify(link, predicate, ssids[])
 ```
 
 ### `get`
-Returns the claim as a JSON-LD object the given link links to. The ssid object is optional but may be needed if the information retrieval is permissioned in which case the ssid is used for identification.
+Returns the claim in a JSON-LD object the given link links to. This object also includes a link to the previous claim in the channel if it exists. The ssid object is optional but may be needed if the information retrieval is permissioned in which case the ssid is used for identification. The return value has the form: {data:claimdata, previous:prevlink}
 
 ```
 async get(link, (ssid))
 ```
 
 ### `exportLD`
-exports linked claim data, starting at the first claim in the channel of the given DID or claim link as reference, following links to other channels which get exported in a nested dataset also and so on. When giving
-a DID, the whole channel is read. When giving a link to a claim, only that claim is processed. The export stops at circular references or at the given depth level. You can use this method again to expand the exported
-dataset even further. Just as like with the get() method, retrieving infrormation that is permissioned may require identification for which the given ssid may be used. You can expand using
-a different ssid.
 
-The exported dataset is a JSON object containing a list of JSON objects containing an exported claim with a link as key. The claim itself, is a JSON object that can contain expanded or unexpanded links. unexpanded links contain special values indicating the reason that the link was not expanded which can be eiter:
+exports linked claim data, starting at the first claim in the channel of the given DID, SSID or at the claim referenced in the given link, following links to other channels which get exported in a nested dataset also and so on. So, when giving a DID or SSID, the whole channel is read. When giving a link to a claim, only that claim is processed. The export stops at circular references or at the given depth level. You can use this method again to expand the exported dataset even further. Just as like with the get() method, retrieving infrormation that is permissioned may require identification for which the given ssid may be used. You can expand using a different ssid.
+
+The exported dataset is a tree of nested JSON objects containing like {DID : { link : {data, link : { DID : { link : ... }}}, link : ... }}. The claim itself, is a JSON object that can contain expanded or unexpanded links. unexpanded links contain special values indicating the reason that the link was not expanded which can be eiter:
 
 MAX-DEPTH-REACHED 	: the case in which the given export depth was reached
-NOT_PERMITTED 		: the case in which the platform requires a given ssid to identify itself with a private key and this ssid was not set or not permitted to access the linked claim
-NOT_ACCESSIBLE		: the case in which the linked claim is not accessible, because (a proper part of) the platform is not available
 NOT_FOUND			: the case in which the linked claim could not be found (while the platform seems to be available in a sufficient way)
+export-error : the case in which some error occurred (including insufficient rights)
 
 Dependent on the reason, further expansion of the export can be achieved.
 
