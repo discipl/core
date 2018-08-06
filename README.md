@@ -10,10 +10,10 @@ As a last resort conflicts can put to an end at the level of judicature. These p
 We care about all beings deeply no matter their peculiarities, capabillities or beliefs and so on. We attend to the non controversial essence of the needs of all where possible but are always confident we can find solutions that work for all. We think organisations (both non-profit as for-profit sector) can progress to this future by embracing the Discipl Manifesto:
 
 1 We create sustainable, highly automated solutions that fulfil people’s needs;  
-2 Solutions can be produced and installed relatively simply for (free of charge) use;
-3 Solutions are open source, having a Creative Commons licence or a GPL version 3.01;
-4 Solutions apply the Discipl Pattern;
-5 We respect the current legal frameworks
+2 Solutions can be produced and installed relatively simply for (free of charge) use;  
+3 Solutions are open source, having a Creative Commons licence or a GPL version 3.01;  
+4 Solutions apply the Discipl Pattern;  
+5 We respect the current legal frameworks  
 
 There's a lot to do to make this work, even as proof of concept. The current world is not really incentivised to make this happen, though the transition harbours great opportunities for conservative entities finding security in holding on to this "old" world too. To experiment with the required technology we are creating a reference implementation of a software stack that could bootstrap this new world.
 
