@@ -63,23 +63,23 @@ Many platforms can be supported to become part of the discipl platform. We disti
 - hybrid 			: permissionless public distributed platforms that combine both public ledger as local wallet platform type of functionality
 - hybrid managed	: permissioned, centrally managed distributed ledgers that might be GDPR compliant enough to store sensitive data in.
 
-At the moment just a few have initial implementations, most are planned, others desired. All these supported platforms have their own connector repository. platform connectors implement the connector interface defined here.
+At the moment just a few have initial implementations, most are planned, others desired. All these supported platforms have their own connector repository. Platform connectors implement the connector interface defined here.
 
 Platform		| Type 				| Status		| Connector Repository			| Usable for PII | duration	| requires node | Remarks
 --- | --- | --- | --- | --- | --- | --- | ---
-Memory			| local wallet		| implemented	| discipl-core-mem				| yes			 | <0.1s	| no, only local| you must add memory protection yourselves, just a local store of claims in memory as long as process it is used in runs
-IOTA 			| public ledger		| implemented	| discipl-core-iota				| no			 | 30s		| yes, manual	| uses IOTA MAM feature in public mode and Carriota field, retaining claims after each milestone requires permanodes. MAM protected and private mode are not GDPR compliant. Note: IOTA uses a central coordinator which approves transactions but it does not do more than that; it is intended to be removed as soon as possible
-IPV8			| hybrid			| planned		| discipl-core-ipv8				| yes			 | <0.1s 	| possible		| can use local svc or svc on node
-Validana		| hybrid managed	| planned		| discipl-core-validana			| possible		 | 1s		| yes, manual	| if used in a permissioned way may be usable for PII if conforming to GDPR
-Zenroom			| hybrid			| planned		| discipl-core-zenroom			| yes			 | <0.1s	| no, local svc	| discipl-zenroom integration; can be used to have discipl functionality within smart contract vm's that embed zenroom and is using the DECODE platform
-Leopard Ledger	| hybrid managed	| planned		| discipl-core-leopardledger	| possible		 | 1s		| yes, manual	| if used in a permissioned way may be usable for PII if conforming to GDPR
-IRMA			| local wallet		| planned		| discipl-core-irma				| yes			 | <0.1s	| yes, manual	| using diva and decentralised scheme manager on other discipl supported platform
-Sovrin			| local wallet		| investigated	| discipl-core-sovrin			| yes			 |	?		| yes, manual 	| unknown
-uPort			| local wallet		| planned		| discipl-core-uport			| yes			 |	?		| yes, manual	| might require fees in future
-lbtc			| public ledger		| unknown		| discipl-core-lbtc				| no			 | <0.1s	| yes, manual	| requires fees
-rchain			| public ledger		| unknown		| discipl-core-rchain			| no			 |	?		| yes, manual	| requires fees
+Memory			| local wallet		| implemented	| discipl-core-mem				| yes			 | <0.1s	| no, only local| You must add memory protection yourselves, just a local store of claims in memory as long as process it is used in runs.
+IOTA 			| public ledger		| implemented	| discipl-core-iota				| no			 | 30s		| yes, manual	| Uses IOTA MAM feature in public mode and Carriota field, retaining claims after each milestone requires permanodes. MAM protected and private mode are not GDPR compliant. Note: IOTA uses a central coordinator which approves transactions but it does not do more than that; it is intended to be removed as soon as possible.
+IPV8			| hybrid			| planned		| discipl-core-ipv8				| yes			 | <0.1s 	| possible		| Can use local service or service on node.
+Validana		| hybrid managed	| planned		| discipl-core-validana			| possible		 | 1s		| yes, manual	| If used in a permissioned way may be usable for PII if conforming to GDPR.
+Zenroom			| hybrid			| planned		| discipl-core-zenroom			| yes			 | <0.1s	| no, local svc	| Discipl-zenroom integration; can be used to have discipl functionality within smart contract vm's that embed zenroom and is using the DECODE platform.
+Leopard Ledger	| hybrid managed	| planned		| discipl-core-leopardledger	| possible		 | 1s		| yes, manual	| If used in a permissioned way may be usable for PII if conforming to GDPR.
+IRMA			| local wallet		| planned		| discipl-core-irma				| yes			 | <0.1s	| yes, manual	| Using [diva](https://github.com/Alliander/diva-irma-js) and decentralised scheme manager on other discipl supported platform.
+Sovrin			| local wallet		| investigated	| discipl-core-sovrin			| yes			 |	?		| yes, manual 	| Unknown.
+uPort			| local wallet		| planned		| discipl-core-uport			| yes			 |	?		| yes, manual	| Might require fees in future.
+Bitcoin			| public ledger		| unknown		| discipl-core-bitcoin				| no			 | <0.1s	| yes, manual	| Requires fees.
+rchain			| public ledger		| unknown		| discipl-core-rchain			| no			 |	?		| yes, manual	| Requires fees.
 nlx         |                 |           | discipl-core-nlx        |          |      |             |
-legacy			| hybrid managed	| planned		| discipl-core-legacy			| possible		 | depends	| yes, manual 	| interfaces with legacy datasources that implement REST interface
+legacy			| hybrid managed	| planned		| discipl-core-legacy			| possible		 | depends	| yes, manual 	| Interfaces with legacy datasources that implement REST interface.
 
 Note this library and all connectors are in early experimental development. Do not use in production (yet).
 
