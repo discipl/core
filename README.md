@@ -71,13 +71,13 @@ Memory			| local wallet		| implemented	| discipl-core-mem				| yes			 | <0.1s	| 
 IOTA 			| public ledger		| implemented	| discipl-core-iota				| no			 | 30s		| yes, manual	| Uses IOTA MAM feature in public mode and Carriota field, retaining claims after each milestone requires permanodes. MAM protected and private mode are not GDPR compliant. Note: IOTA uses a central coordinator which approves transactions but it does not do more than that; it is intended to be removed as soon as possible.
 IPV8			| hybrid			| planned		| discipl-core-ipv8				| yes			 | <0.1s 	| possible		| Can use local service or service on node.
 Validana		| hybrid managed	| planned		| discipl-core-validana			| possible		 | 1s		| yes, manual	| If used in a permissioned way may be usable for PII if conforming to GDPR.
-Zenroom			| hybrid			| planned		| discipl-core-zenroom			| yes			 | <0.1s	| no, local svc	| Discipl-zenroom integration; can be used to have discipl functionality within smart contract vm's that embed zenroom and is using the DECODE platform.
+Zenroom			| hybrid			| planned		| discipl-core-zenroom			| yes			 | <0.1s	| no, local service	| Discipl-zenroom integration; can be used to have discipl functionality within smart contract vm's that embed zenroom and is using the DECODE platform.
 Leopard Ledger	| hybrid managed	| planned		| discipl-core-leopardledger	| possible		 | 1s		| yes, manual	| If used in a permissioned way may be usable for PII if conforming to GDPR.
 IRMA			| local wallet		| planned		| discipl-core-irma				| yes			 | <0.1s	| yes, manual	| Using [diva](https://github.com/Alliander/diva-irma-js) and decentralised scheme manager on other discipl supported platform.
 Sovrin			| local wallet		| investigated	| discipl-core-sovrin			| yes			 |	?		| yes, manual 	| Unknown.
 uPort			| local wallet		| planned		| discipl-core-uport			| yes			 |	?		| yes, manual	| Might require fees in future.
 Bitcoin			| public ledger		| unknown		| discipl-core-bitcoin				| no			 | <0.1s	| yes, manual	| Requires fees.
-rchain			| public ledger		| unknown		| discipl-core-rchain			| no			 |	?		| yes, manual	| Requires fees.
+Rchain			| public ledger		| unknown		| discipl-core-rchain			| no			 |	?		| yes, manual	| Requires fees.
 nlx         |                 |           | discipl-core-nlx        |          |      |             |
 legacy			| hybrid managed	| planned		| discipl-core-legacy			| possible		 | depends	| yes, manual 	| Interfaces with legacy datasources that implement REST interface.
 
@@ -93,7 +93,7 @@ Note that self sovereign identities are meant to be relatively short lived and b
 
 ## Installation
 
-node comes with npm installed so you should have a version of npm, however npm gets updated more frequently than node does, so you'll want to make sure it's the latest version.
+Node comes with npm installed so you should have a version of npm, however npm gets updated more frequently than node does, so you'll want to make sure it's the latest version.
 ```
 
 sudo npm install npm -g
@@ -123,15 +123,14 @@ See examples folder for more example code (coming soon)
 ## API
 
 ### `getConnector`
-loads and retrieves the discipl connector object with the given name. You only need this when you'll have to configure it differently than as is done by default before
-doing other actions with this API. The name 'ipv8' would load and return the discipl-core-ipv8 connector. It throws an error if it does not succeed in this.
+Loads and retrieves the discipl connector object with the given name. You only need this when you'll have to configure it differently than as is done by default before doing other actions with this API. The name 'ipv8' would load and return the discipl-core-ipv8 connector. It throws an error if it does not succeed in this.
 
 ```
 getConnector(name)
 ```
 
 ### `newSsid`
-Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for.
+Generates a new ssid, a JSON object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for.
 This action will open up a channel tied to this DID on the platform. Nobody will probably know about this
 however until a first claim is published publicly (depends on platform). The connector name should be given as argument.
 By default this is to be the same as the part after "discipl-core-" in the name of the connector repository in github. So for instance, for IOTA it is "iota" (lowercase).
@@ -142,16 +141,14 @@ newSsid(connector)
 ```
 
 ### `claim`
-Adds a claim with the given data in it to the channel of the given ssid. The given data should be a JSON object with a list of key:value pairs in which the keys are predicates and the values the objects. A connector also stores this in a nested way as one json data object. Note: you will not be able to reference, attest and thus verify single nested claims. Storing a claim on a platform can take some time, dependent on the platform used. Therefor this method is asynchronous and returns a promise. If no error occurred, the resolve function receives a link to the new claim as result. This link can be used in other claims (in channels of other Ssids for instance) as attestation.
+Adds a claim with the given data in it to the channel of the given ssid. The given data should be a JSON object with a list of key:value pairs in which the keys are predicates and the values the objects. A connector also stores this in a nested way as one JSON data object. Note: you will not be able to reference, attest and thus verify single nested claims. Storing a claim on a platform can take some time, dependent on the platform used. Therefore this method is asynchronous and returns a promise. If no error occurred, the resolve function receives a link to the new claim as result. This link can be used in other claims (in channels of other Ssids for instance) as attestation.
 
 ```
 async claim(ssid, data)
 ```
 
 ###	`attest`
-Creates a simple attestation using a given predicate and link. In itself this is the same as making the given ssid make a claim that includes the given link.
-It is a shorthand for: claim(ssid, {predicate:link}, ...). See also the description at the claim method. To make more complex attestations, holding extra information in relation to the attestation, you can simply use the claim method with links as objects in relation
-to given predicates.
+Creates a simple attestation using a given predicate and link. In itself this is the same as making the given ssid make a claim that includes the given link. It is a shorthand for: claim(ssid, {predicate:link}, ...). See also the description at the claim method. To make more complex attestations, holding extra information in relation to the attestation, you can simply use the claim method with links as objects in relation to given predicates.
 
 ```
 async attest(ssid, predicate, link)
@@ -165,7 +162,7 @@ async verify(link, predicate, ssids[])
 ```
 
 ### `get`
-Returns the claim in a JSON-LD object the given link links to. This object also includes a link to the previous claim in the channel if it exists. The ssid object is optional but may be needed if the information retrieval is permissioned in which case the ssid is used for identification. The return value has the form: {data:claimdata, previous:prevlink}
+Returns the claim in a JSON-LD object the given link links to. This object also includes a link to the previous claim in the channel if it exists. The ssid object is optional but may be needed if the information retrieval is permissioned in which case the ssid is used for identification. The return value has the form: {data:claimdata, previous:prevlink}.
 
 ```
 async get(link, (ssid))
@@ -173,7 +170,7 @@ async get(link, (ssid))
 
 ### `exportLD`
 
-exports linked claim data, starting at the first claim in the channel of the given DID, SSID or at the claim referenced in the given link, following links to other channels which get exported in a nested dataset also and so on. So, when giving a DID or SSID, the whole channel is read. When giving a link to a claim, only that claim is processed. The export stops at circular references or at the given depth level. You can use this method again to expand the exported dataset even further. Just as like with the get() method, retrieving infrormation that is permissioned may require identification for which the given ssid may be used. You can expand using a different ssid.
+Exports linked claim data, starting at the first claim in the channel of the given DID, SSID or at the claim referenced in the given link, following links to other channels which get exported in a nested dataset also and so on. So, when giving a DID or SSID, the whole channel is read. When giving a link to a claim, only that claim is processed. The export stops at circular references or at the given depth level. You can use this method again to expand the exported dataset even further. Just as like with the get() method, retrieving infrormation that is permissioned may require identification for which the given ssid may be used. You can expand using a different ssid.
 
 The exported dataset is a tree of nested JSON objects containing like {DID : { link : {data, link : { DID : { link : ... }}}, link : ... }}. The claim itself, is a JSON object that can contain expanded or unexpanded links. unexpanded links contain special values indicating the reason that the link was not expanded which can be eiter:
 
@@ -200,7 +197,7 @@ async revoke(ssid, link)
 ```
 
 ### `subscribe`
-returns a promise with which you can effectively subscribe on the event that a new claim is added to the channel of the given ssids
+Returns a promise with which you can effectively subscribe on the event that a new claim is added to the channel of the given ssids.  
 Note not yet implemented
 
 ```
