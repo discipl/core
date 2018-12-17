@@ -197,9 +197,9 @@ async revoke(ssid, link)
 ```
 
 ### `subscribe`
-Returns a promise with which you can effectively subscribe on the event that a new claim is added to the channel of the given ssids.  
+Returns a promise with which you can effectively subscribe on the event that a new claim matching the given ssid, predicate and/or object is added to some channel.
 Note not yet implemented
 
 ```
-async subscribe(ssid)
+async subscribe(ssid, predicate, object)
 ```
