@@ -1,5 +1,4 @@
-
-const CryptoJS = require('crypto-js')
+import crypto from 'crypto-js';
 
 const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
@@ -84,7 +83,7 @@ const getSsidOfLinkedClaim = async (link) => {
  * returns a HMAC-384 peppered hash of the given data with the did of the given ssid as key
  */
 const getHash = (ssid, data) => {
-  return CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, ssid.did))
+  return crypto.enc.Base64.stringify(crypto.HmacSHA384(data, ssid.did))
 }
 
 const expandSsid = (ssid) => {
@@ -265,7 +264,7 @@ const revoke = async (ssid, link) => {
   return attest(ssid, REVOKE_PREDICATE, link)
 }
 
-module.exports = {
+export {
   getConnector,
   newSsid,
   claim,
