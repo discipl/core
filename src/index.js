@@ -1,5 +1,4 @@
-
-const CryptoJS = require('crypto-js')
+import crypto from 'crypto-js';
 
 const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
@@ -17,18 +16,20 @@ var disciplCoreConnectors = []
 /**
  * requires and holds in memory the given discipl connector (if not done before)
  */
-const initializeConnector = (connector) => {
+const initializeConnector = async (connector) => {
   if(!Object.keys(disciplCoreConnectors).includes(connector)) {
-    let connectorModuleClass = require(CONNECTOR_MODULE_PREFIX+connector)
-    disciplCoreConnectors[connector] = new connectorModuleClass()
+    import(CONNECTOR_MODULE_PREFIX+connector).then(module => {
+        let connectorModuleClass = module.default
+        disciplCoreConnectors[connector] = new connectorModuleClass()
+    })
   }
 }
 
 /**
  * returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
  */
-const getConnector = (connector) => {
-  initializeConnector(connector)
+const getConnector = async (connector) => {
+  await initializeConnector(connector)
   return disciplCoreConnectors[connector]
 }
 
@@ -60,10 +61,10 @@ const getLink = (ssid, claim) => {
 /**
  * checks if a given string seems to be a valid link (correct syntax and refers to an available connector). Does not check the claim the link refers to exists or not. The reference is not checked
  */
-const isValidLink = (link) => {
+const isValidLink = async (link) => {
   try {
     let {connector, reference} = splitLink(link)
-    getConnector(connector)
+    await getConnector(connector)
     return true
   } catch(e) {
     return false
@@ -75,7 +76,7 @@ const isValidLink = (link) => {
  */
 const getSsidOfLinkedClaim = async (link) => {
   let {connector, reference} = splitLink(link)
-  let conn = getConnector(connector)
+  let conn = await getConnector(connector)
   let ssid = await conn.getSsidOfClaim(reference)
   return {'did':DID_PREFIX+conn.getName()+DID_DELIMITER+ssid.pubkey}
 }
@@ -84,12 +85,12 @@ const getSsidOfLinkedClaim = async (link) => {
  * returns a HMAC-384 peppered hash of the given data with the did of the given ssid as key
  */
 const getHash = (ssid, data) => {
-  return CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA384(data, ssid.did))
+  return crypto.enc.Base64.stringify(crypto.HmacSHA384(data, ssid.did))
 }
 
-const expandSsid = (ssid) => {
+const expandSsid = async (ssid) => {
   let splitted = ssid.did.split(DID_DELIMITER)
-  ssid['connector'] = getConnector(splitted[2])
+  ssid['connector'] = await getConnector(splitted[2])
   ssid['pubkey'] = splitted[3]
   return ssid
 }
@@ -98,7 +99,7 @@ const expandSsid = (ssid) => {
  * Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for
  */
 const newSsid = async (connector) => {
-  let conn = getConnector(connector)
+  let conn = await getConnector(connector)
   let ssid = await conn.newSsid()
   ssid['connector'] = conn
   ssid['did'] = DID_PREFIX+conn.getName()+DID_DELIMITER+ssid.pubkey
@@ -109,7 +110,7 @@ const newSsid = async (connector) => {
  * Adds a claim to the (end of the) channel of the given ssid (containing the did and probably privkey as only requirement). Returns a link to this claim.
  */
 const claim = async (ssid, data) => {
-  expandSsid(ssid)
+  await expandSsid(ssid)
   let reference = await ssid.connector.claim(ssid, data)
   return getLink(ssid, reference)
 }
@@ -135,7 +136,7 @@ const verify = async (predicate, link, ssids, all = false) => {
   for(let i in ssids) {
     let ssid = ssids[i]
     if(!(ssid)) continue
-    expandSsid(ssid)
+    await expandSsid(ssid)
     let attestation = {}
     attestation[predicate] = link
     let reference = await ssid.connector.verify(ssid, attestation)
@@ -165,7 +166,7 @@ const verify = async (predicate, link, ssids, all = false) => {
  */
 const get = async (link, ssid = null) => {
   let {connector, reference}  = splitLink(link)
-  let conn = getConnector(connector)
+  let conn = await getConnector(connector)
   let result = await conn.get(reference, ssid)
   result.previous = getLink({'connector':conn}, result.previous)
   return result
@@ -187,17 +188,17 @@ const detectSsidLinkFromDidSsidOrLink = async (value) => {
   let currentLink = null
   let currentSsid = null
   if(typeof value == 'string') {
-    if(isValidLink(value)) {
+    if(await isValidLink(value)) {
       currentLink = value
       currentSsid = await getSsidOfLinkedClaim(currentLink)
     } else if(value.indexOf(DID_PREFIX) == 0) {
-      currentSsid = expandSsid({'did':value})
+      currentSsid = await expandSsid({'did':value})
       currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
     } else {
       return null
     }
   } else if(Object.keys(value).includes('did')) {
-    currentSsid = expandSsid(value)
+    currentSsid = await expandSsid(value)
     currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
   } else {
     return null
@@ -265,7 +266,7 @@ const revoke = async (ssid, link) => {
   return attest(ssid, REVOKE_PREDICATE, link)
 }
 
-module.exports = {
+export {
   getConnector,
   newSsid,
   claim,
