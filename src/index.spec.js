@@ -1,4 +1,4 @@
-import { expect, use } from "chai";
+import { expect } from "chai";
 import * as discipl from '../src/index.js';
 
 import sinon from 'sinon';
@@ -32,9 +32,19 @@ describe("desciple-core-api", () => {
             expect(claimlink).to.be.a('string')
             expect(claimlink.length).to.equal(108)
         })
+
+        it("should be able to get a claim added through claim, with link to previous", async () => {
+            let ssid = await discipl.newSsid('memory')
+            let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
+            let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
+
+            let claim = await discipl.get(claimlink2)
+            expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({'need':'wine'}))
+            expect(claim.previous).to.equal(claimlink1)
+
+        })
     },
     describe("The disciple core API with mocked connector", () => {
-
         it("should be able to retrieve a new mocked ssid asynchronously", async () => {
             let newSsidStub = sinon.stub().returns({pubkey: "".padStart(88,"1"), privkey: "".padStart(88,"2")})
             let getNameStub = sinon.stub().returns("mock")
@@ -64,7 +74,7 @@ describe("desciple-core-api", () => {
             let claimlink = await discipl.claim(ssid, {'need':'beer'})
 
             expect(claimStub.calledOnceWith({did: 'did:discipl:mock:111', connector: stubConnector, pubkey: '111'}, {'need':'beer'})).to.equal(true)
-            expect(getNameStub.calledOnce).to.be.equal(true)
+            expect(getNameStub.calledOnce).to.equal(true)
 
 
             expect(claimlink).to.equal('link:discipl:mock:claimRef')
@@ -81,12 +91,30 @@ describe("desciple-core-api", () => {
             let claimlink = await discipl.claim(ssid, {'need':'beer'})
 
             expect(claimStub.calledOnceWith({did: 'did:discipl:mock:111', connector: stubConnector, pubkey: '111'}, {'need':'beer'})).to.equal(true)
-            expect(getNameStub.calledOnce).to.be.equal(true)
+            expect(getNameStub.calledOnce).to.equal(true)
 
             expect(claimlink).to.equal('link:discipl:mock:jdkIBFi8PojrrOV/Z9qtuS+8hDyUUMUkono9Rof4ZxlA6OIQjOWcHeSWGD73fn2I')
         })
 
+        it("should be able to get a claim added through claims", async () => {
+            let claimlink = 'link:discipl:mock:claimRef'
+            let prevClaimlink = 'link:discipl:mock:previous'
 
+            let getStub = sinon.stub().returns({'data':{'need': 'wine'}, 'previous': 'previous'})
+            let getNameStub = sinon.stub().returns("mock")
+
+            let stubConnector = {get: getStub, getName: getNameStub}
+            await discipl.registerConnector('mock', stubConnector)
+
+            let claim = await discipl.get(claimlink)
+
+            expect(getStub.calledOnceWith("claimRef", null)).to.equal(true)
+            expect(getNameStub.calledOnce).to.equal(true)
+
+            expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({'need':'wine'}))
+            expect(claim.previous).to.equal(prevClaimlink)
+
+        })
     })
     )
 })
