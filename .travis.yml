@@ -7,4 +7,4 @@ addons:
 script:
   - npm test
   # other script steps might be done before running the actual analysis
-  - sonar-scanner
+  - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then sonar-scanner; fi'
