@@ -20,7 +20,7 @@ const initializeConnector = async (connector) => {
   if(!Object.keys(disciplCoreConnectors).includes(connector)) {
     import(CONNECTOR_MODULE_PREFIX+connector).then(module => {
         let connectorModuleClass = module.default
-        disciplCoreConnectors[connector] = new connectorModuleClass()
+        registerConnector(connector, new connectorModuleClass())
     })
   }
 }
@@ -31,6 +31,16 @@ const initializeConnector = async (connector) => {
 const getConnector = async (connector) => {
   await initializeConnector(connector)
   return disciplCoreConnectors[connector]
+}
+
+/**
+ * Registers a connector explicitly.
+ *
+ * @param name of the connector. Packages containing a connector follow the naming convention CONNECTOR_MODULE_PREFIX + name
+ * @param connector instantiated object representing the connector
+ */
+const registerConnector = (name, connector) => {
+  disciplCoreConnectors[name] = connector;
 }
 
 /**
@@ -268,6 +278,7 @@ const revoke = async (ssid, link) => {
 
 export {
   getConnector,
+  registerConnector,
   newSsid,
   claim,
   attest,
