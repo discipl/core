@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import {expect} from "chai";
 import * as discipl from '../src/index.js';
 
 import sinon from 'sinon';
@@ -70,6 +70,20 @@ describe("desciple-core-api", () => {
             let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, {'did':'did:discipl:memory:1234'}, attestorSsid])
 
             expect(verifiedAttestor).to.equal(attestorSsid)
+        })
+
+        it("should be able to export linked verifiable claim channels", async () => {
+            let ssid = await discipl.newSsid('memory')
+            let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
+            let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
+
+            let attestorSsid = await discipl.newSsid('memory')
+
+            let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2);
+            let exportedData = await discipl.exportLD(attestorSsid)
+
+
+            expect(exportedData[attestorSsid.did][attestationLink]['agree'][ssid.did][claimlink2]).to.deep.equal({'need': 'wine'})
         })
     },
     describe("The disciple core API with mocked connector", () => {

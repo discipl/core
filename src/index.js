@@ -18,10 +18,9 @@ var disciplCoreConnectors = []
  */
 const initializeConnector = async (connector) => {
   if(!Object.keys(disciplCoreConnectors).includes(connector)) {
-    import(CONNECTOR_MODULE_PREFIX+connector).then(module => {
-        let connectorModuleClass = module.default
-        registerConnector(connector, new connectorModuleClass())
-    })
+    let module = await import(CONNECTOR_MODULE_PREFIX+connector);
+    let connectorModuleClass = module.default
+    registerConnector(connector, new connectorModuleClass())
   }
 }
 
@@ -243,13 +242,13 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
 
   let res = await get(currentLink, ssid)
   if(res != null) {
-    data = res.data
+    let data = res.data
     if(res.previous && (SsidDidOrLink.indexOf(DID_PREFIX) == 0)) {
       console.log('Get previous of channel'+res.previous)
       exportData[currentSsid.did] = await exportLD(res.previous, maxdepth, ssid, visitedStack)
     }
     exportData[currentSsid.did][currentLink] = {}
-    for(elem in data) {
+    for(let elem in data) {
       exportData[currentSsid.did][currentLink][elem] = {}
       let value = data[elem]
       try {
