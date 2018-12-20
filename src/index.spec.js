@@ -39,9 +39,26 @@ describe("desciple-core-api", () => {
             let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
 
             let claim = await discipl.get(claimlink2)
+
+
+            let attestorSsid = await discipl.newSsid('memory')
+
+            let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2);
+
+            let attestation = await discipl.get(attestationLink)
+
+            expect(attestation.data.agree).to.equal(claimlink2)
+            expect(attestation.previous).to.equal(null)
+        })
+
+        it("should be able to attest to a second claim in a chain", async () => {
+            let ssid = await discipl.newSsid('memory')
+            let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
+            let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
+
+            let claim = await discipl.get(claimlink2)
             expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({'need':'wine'}))
             expect(claim.previous).to.equal(claimlink1)
-
         })
     },
     describe("The disciple core API with mocked connector", () => {
@@ -113,7 +130,23 @@ describe("desciple-core-api", () => {
 
             expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({'need':'wine'}))
             expect(claim.previous).to.equal(prevClaimlink)
+        })
 
+        it("should be able to attest a claim", async() => {
+            let ssid = {did: 'did:discipl:mock:111'}
+            let claimlink = 'link:discipl:mock:claimRef'
+
+            let claimStub = sinon.stub().returns("attestationRef")
+            let getNameStub = sinon.stub().returns("mock")
+            let stubConnector = {claim: claimStub, getName: getNameStub}
+
+            await discipl.registerConnector('mock', stubConnector)
+
+            let attestationLink = await discipl.attest(ssid, 'agree', claimlink);
+            expect(getNameStub.calledOnce).to.equal(true)
+            expect(claimStub.calledOnceWith({did: 'did:discipl:mock:111', connector: stubConnector, pubkey: '111'}, {'agree':claimlink})).to.equal(true)
+
+            expect(attestationLink).to.equal('link:discipl:mock:attestationRef')
         })
     })
     )
