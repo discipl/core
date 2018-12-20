@@ -69,6 +69,7 @@ describe("desciple-core-api", () => {
 
             let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, {'did':'did:discipl:memory:1234'}, attestorSsid])
 
+            // The first ssid that is valid and proves the attestation should be returned
             expect(verifiedAttestor).to.equal(attestorSsid)
         })
 
@@ -183,6 +184,7 @@ describe("desciple-core-api", () => {
             let verifyStub = sinon.stub()
 
             verifyStub.onCall(0).returns('attestationRef')
+            // No revocations will be found
             verifyStub.onCall(1).returns(null)
             verifyStub.onCall(2).returns(null)
 
@@ -234,7 +236,9 @@ describe("desciple-core-api", () => {
             let verifyStub = sinon.stub()
 
             verifyStub.onCall(0).returns('attestationRef')
+            // A revocation of the attestation will be found
             verifyStub.onCall(1).returns('attestationRevocationRef')
+            // No revocations of the revocation of the attestation will be found
             verifyStub.onCall(2).returns(null)
             verifyStub.onCall(3).returns(null)
 
