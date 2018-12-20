@@ -39,7 +39,14 @@ describe("desciple-core-api", () => {
             let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
 
             let claim = await discipl.get(claimlink2)
+            expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({'need':'wine'}))
+            expect(claim.previous).to.equal(claimlink1)
+        })
 
+        it("should be able to attest to a second claim in a chain", async () => {
+            let ssid = await discipl.newSsid('memory')
+            let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
+            let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
 
             let attestorSsid = await discipl.newSsid('memory')
 
@@ -51,14 +58,18 @@ describe("desciple-core-api", () => {
             expect(attestation.previous).to.equal(null)
         })
 
-        it("should be able to attest to a second claim in a chain", async () => {
+        it("should be able to verify an attestation", async () => {
             let ssid = await discipl.newSsid('memory')
             let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
             let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
 
-            let claim = await discipl.get(claimlink2)
-            expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({'need':'wine'}))
-            expect(claim.previous).to.equal(claimlink1)
+            let attestorSsid = await discipl.newSsid('memory')
+
+            let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2);
+
+            let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, {'did':'did:discipl:memory:1234'}, attestorSsid])
+
+            expect(verifiedAttestor).to.equal(attestorSsid)
         })
     },
     describe("The disciple core API with mocked connector", () => {
@@ -148,6 +159,97 @@ describe("desciple-core-api", () => {
 
             expect(attestationLink).to.equal('link:discipl:mock:attestationRef')
         })
+
+        it("should be able to verify an attestation", async() => {
+            let ssid = {did: 'did:discipl:mock:111'}
+            let attestorSsid = {did: 'did:discipl:mock:attestor'}
+            let claimlink = 'link:discipl:mock:claimRef'
+            let attestationlink = 'link:discipl:mock:attestationRef'
+
+            let verifyStub = sinon.stub()
+
+            verifyStub.onCall(0).returns('attestationRef')
+            verifyStub.onCall(1).returns(null)
+            verifyStub.onCall(2).returns(null)
+
+            let getNameStub = sinon.stub().returns("mock")
+
+            let getSsidOfClaimStub = sinon.stub().returns({pubkey: "111"})
+
+            let stubConnector = {verify: verifyStub, getName: getNameStub, getSsidOfClaim: getSsidOfClaimStub}
+
+            await discipl.registerConnector('mock', stubConnector)
+
+            let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+
+            expect(verifyStub.calledThrice).to.equal(true)
+            expect(verifyStub.args[0]).to.deep.equal([{did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor'}, {agree: claimlink}])
+            expect(verifyStub.args[1]).to.deep.equal([{did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor'}, {revoke: attestationlink}])
+            expect(verifyStub.args[2]).to.deep.equal([{did: ssid.did, connector: stubConnector, pubkey: '111'}, {revoke: claimlink}])
+            expect(getNameStub.calledTwice).to.equal(true)
+            expect(getSsidOfClaimStub.calledOnce).to.equal(true)
+            expect(getSsidOfClaimStub.args[0]).to.deep.equal(['claimRef'])
+            expect(verifiedAttestor.did).to.equal(attestorSsid.did)
+        })
+
+        it("should not be able to verify an attestation, if there is no matching claim", async() => {
+            let attestorSsid = {did: 'did:discipl:mock:attestor'}
+            let claimlink = 'link:discipl:mock:claimRef'
+
+            let verifyStub = sinon.stub().returns(null)
+
+            let stubConnector = {verify: verifyStub}
+
+            await discipl.registerConnector('mock', stubConnector)
+
+            let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+
+            expect(verifyStub.calledOnce).to.equal(true)
+            expect(verifyStub.args[0]).to.deep.equal([{did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor'}, {agree: claimlink}])
+
+            expect(verifiedAttestor).to.equal(null)
+        })
+
+        it("should not be able to verify an attestation, if the attestation is revoked", async() => {
+            let ssid = {did: 'did:discipl:mock:111'}
+            let attestorSsid = {did: 'did:discipl:mock:attestor'}
+            let claimlink = 'link:discipl:mock:claimRef'
+            let attestationlink = 'link:discipl:mock:attestationRef'
+            let attestationrevocationlink = 'link:discipl:mock:attestationRevocationRef'
+
+            let verifyStub = sinon.stub()
+
+            verifyStub.onCall(0).returns('attestationRef')
+            verifyStub.onCall(1).returns('attestationRevocationRef')
+            verifyStub.onCall(2).returns(null)
+            verifyStub.onCall(3).returns(null)
+
+            let getSsidOfClaimStub = sinon.stub().returns({pubkey: "attestor"})
+
+            let getNameStub = sinon.stub().returns("mock")
+
+
+            let stubConnector = {verify: verifyStub, getName: getNameStub, getSsidOfClaim: getSsidOfClaimStub}
+
+            await discipl.registerConnector('mock', stubConnector)
+
+            let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+
+            expect(verifyStub.callCount).to.equal(4)
+            expect(verifyStub.args[0]).to.deep.equal([{did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor'}, {agree: claimlink}])
+            expect(verifyStub.args[1]).to.deep.equal([{did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor'}, {revoke: attestationlink}])
+            expect(verifyStub.args[2]).to.deep.equal([{did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor'}, {revoke: attestationrevocationlink}])
+            expect(verifyStub.args[3]).to.deep.equal([{did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor'}, {revoke: attestationlink}])
+
+            expect(getSsidOfClaimStub.calledOnce).to.equal(true)
+            expect(getSsidOfClaimStub.args[0]).to.deep.equal(['attestationRef'])
+
+            expect(getNameStub.callCount).to.equal(3)
+
+            expect(verifiedAttestor).to.equal(null)
+        })
+
+
     })
     )
 })
