@@ -45,7 +45,7 @@ describe("desciple-core-api", () => {
 
         it("should be able to attest to a second claim in a chain", async () => {
             let ssid = await discipl.newSsid('memory')
-            let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
+            await discipl.claim(ssid, {'need': 'beer'})
             let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
 
             let attestorSsid = await discipl.newSsid('memory')
@@ -60,12 +60,12 @@ describe("desciple-core-api", () => {
 
         it("should be able to verify an attestation", async () => {
             let ssid = await discipl.newSsid('memory')
-            let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
+            await discipl.claim(ssid, {'need': 'beer'})
             let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
 
             let attestorSsid = await discipl.newSsid('memory')
 
-            let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2);
+            await discipl.attest(attestorSsid, 'agree', claimlink2);
 
             let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, {'did':'did:discipl:memory:1234'}, attestorSsid])
 
@@ -74,7 +74,7 @@ describe("desciple-core-api", () => {
 
         it("should be able to export linked verifiable claim channels", async () => {
             let ssid = await discipl.newSsid('memory')
-            let claimlink1 = await discipl.claim(ssid, {'need': 'beer'})
+            await discipl.claim(ssid, {'need': 'beer'})
             let claimlink2 = await discipl.claim(ssid, {'need': 'wine'})
 
             let attestorSsid = await discipl.newSsid('memory')
