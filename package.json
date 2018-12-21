@@ -7,7 +7,7 @@
   "author": "Bas Kaptijn",
   "license": "GPL-3.0",
   "scripts": {
-    "test": "nyc --reporter=html --reporter=text ./node_modules/.bin/mocha --require @babel/register ./src/**/*.spec.js",
+    "test": "nyc --reporter=html --reporter=text ./node_modules/.bin/mocha --require @babel/register ./test/**/*.spec.js",
     "lint": "./node_modules/standard/bin/cmd.js --parser babel-eslint",
     "lint-fix": "./node_modules/standard/bin/cmd.js --parser babel-eslint --fix",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov && ./node_modules/codecov/bin/codecov"
