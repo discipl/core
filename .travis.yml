@@ -10,7 +10,7 @@ script:
   - npm run lint
   - npm test
   # other script steps might be done before running the actual analysis
-  - 'if [ ! -z "$SONAR_TOKEN" ]; then sonar-scanner; fi'
 
 after_success:
   - npm run coverage
+  - 'if [ ! -z "$SONAR_TOKEN" ]; then sonar-scanner; fi'
