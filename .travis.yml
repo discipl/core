@@ -5,6 +5,7 @@ addons:
   sonarcloud:
     organization: "discipl" # the key of the org you chose at step #3
 script:
+  - npm run lint
   - npm test
   # other script steps might be done before running the actual analysis
   - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then sonar-scanner; fi'
