@@ -4,6 +4,8 @@ node_js:
 addons:
   sonarcloud:
     organization: "discipl" # the key of the org you chose at step #3
+before_script:
+  - git fetch --unshallow
 script:
   - npm run lint
   - npm test
