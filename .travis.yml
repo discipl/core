@@ -9,3 +9,6 @@ script:
   - npm test
   # other script steps might be done before running the actual analysis
   - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then sonar-scanner; fi'
+
+after_success:
+  - npm run coverage
