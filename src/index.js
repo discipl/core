@@ -247,14 +247,16 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
     }
     exportData[currentSsid.did][currentLink] = {}
     for (let elem in data) {
-      exportData[currentSsid.did][currentLink][elem] = {}
-      let value = data[elem]
-      try {
-        console.log('Getting export for..' + value)
-        exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
-        console.log('Got' + exportData[currentSsid.did][currentLink][elem])
-      } catch (err) {
-        exportData[currentSsid.did][currentLink][elem][value] = { 'export-error': err }
+      if (data.hasOwnProperty(elem)) {
+        exportData[currentSsid.did][currentLink][elem] = {}
+        let value = data[elem]
+        try {
+          console.log('Getting export for..' + value)
+          exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
+          console.log('Got' + exportData[currentSsid.did][currentLink][elem])
+        } catch (err) {
+          exportData[currentSsid.did][currentLink][elem][value] = { 'export-error': err }
+        }
       }
     }
   } else {
