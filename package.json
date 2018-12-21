@@ -20,6 +20,7 @@
     "babel-plugin-dynamic-import-node": "^2.2.0",
     "chai": "^4.2.0",
     "discipl-core-memory": "git+https://github.com/discipl/discipl-core-memory.git",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "sinon": "^7.2.2"
   }
 }
