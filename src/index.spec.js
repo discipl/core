@@ -250,7 +250,7 @@ describe('desciple-core-api', () => {
       verifyStub.onCall(1).returns('attestationRevocationRef')
       // No revocations of the revocation of the attestation will be found
       verifyStub.onCall(2).returns(null)
-      //verifyStub.onCall(3).returns(null)
+      // verifyStub.onCall(3).returns(null)
 
       let getSsidOfClaimStub = sinon.stub().returns({ pubkey: 'attestor' })
 
@@ -266,10 +266,10 @@ describe('desciple-core-api', () => {
       expect(verifyStub.args[0]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { agree: claimlink }])
       expect(verifyStub.args[1]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
       expect(verifyStub.args[2]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationrevocationlink }])
-      //expect(verifyStub.args[3]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
+      // expect(verifyStub.args[3]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
 
       expect(getSsidOfClaimStub.calledOnce).to.equal(false)
-      //expect(getSsidOfClaimStub.args[0]).to.deep.equal(['attestationRef'])
+      // expect(getSsidOfClaimStub.args[0]).to.deep.equal(['attestationRef'])
 
       expect(getNameStub.callCount).to.equal(2)
 
