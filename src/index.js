@@ -141,6 +141,7 @@ const attest = async (ssid, predicate, link) => {
  * If none of the given ssid's have attested, the method returns null
  */
 const verify = async (predicate, link, ssids, all = false) => {
+  debugger
   let result = []
   for (let i in ssids) {
     let ssid = ssids[i]
@@ -151,7 +152,7 @@ const verify = async (predicate, link, ssids, all = false) => {
     let reference = await ssid.connector.verify(ssid, attestation)
     if (reference) {
       if (await verify(REVOKE_PREDICATE, getLink(ssid, reference), [ssid]) == null) {
-        if (await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
+        if (predicate == REVOKE_PREDICATE || await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
           if (all) {
             result.push(ssid)
           } else {
