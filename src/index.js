@@ -1,11 +1,11 @@
 import crypto from 'crypto-js'
+import loadconnector from 'connector-loader'
 
 const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
 const LINK_PREFIX = 'link' + DID_DELIMITER + 'discipl' + DID_DELIMITER
 const DID_PREFIX = 'did' + DID_DELIMITER + 'discipl' + DID_DELIMITER
 const REVOKE_PREDICATE = 'revoke'
-const CONNECTOR_MODULE_PREFIX = 'discipl-core-'
 
 var disciplCoreConnectors = []
 
@@ -16,11 +16,10 @@ var disciplCoreConnectors = []
 /**
  * requires and holds in memory the given discipl connector (if not done before)
  */
-const initializeConnector = async (connector) => {
-  if (!Object.keys(disciplCoreConnectors).includes(connector)) {
-    let module = await import(CONNECTOR_MODULE_PREFIX + connector)
-    let ConnectorModuleClass = module.default
-    registerConnector(connector, new ConnectorModuleClass())
+const initializeConnector = async (connectorName) => {
+  if (!Object.keys(disciplCoreConnectors).includes(connectorName)) {
+    let ConnectorModuleClass = await loadconnector(connectorName)
+    registerConnector(connectorName, new ConnectorModuleClass())
   }
 }
 
