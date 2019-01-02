@@ -1,7 +1,7 @@
 const CONNECTOR_MODULE_PREFIX = 'discipl-core-'
 
 /**
- * requires and holds in memory the given discipl connector (if not done before)
+ * loads a connector based on module name using a dynamic import
  */
 const loadConnector = async (connectorName) => {
   let module = await import(CONNECTOR_MODULE_PREFIX + connectorName)

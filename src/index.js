@@ -1,5 +1,5 @@
 import crypto from 'crypto-js'
-import loadconnector from 'connector-loader'
+import loadConnector from 'connector-loader'
 
 const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
@@ -18,7 +18,7 @@ var disciplCoreConnectors = []
  */
 const initializeConnector = async (connectorName) => {
   if (!Object.keys(disciplCoreConnectors).includes(connectorName)) {
-    let ConnectorModuleClass = await loadconnector(connectorName)
+    let ConnectorModuleClass = await loadConnector(connectorName)
     registerConnector(connectorName, new ConnectorModuleClass())
   }
 }
