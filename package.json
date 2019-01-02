@@ -19,7 +19,8 @@
     "test": "nyc --reporter=html --reporter=text ./node_modules/.bin/mocha --require @babel/register ./test/**/*.spec.js",
     "lint": "./node_modules/standard/bin/cmd.js --parser babel-eslint",
     "lint-fix": "./node_modules/standard/bin/cmd.js --parser babel-eslint --fix",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && ./node_modules/codecov/bin/codecov"
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && ./node_modules/codecov/bin/codecov",
+    "docs": "./node_modules/jsdoc-to-markdown/bin/cli.js -f src/* > docs/API.md"
   },
   "dependencies": {
     "@discipl/core-baseconnector": "^0.2.1",
@@ -35,6 +36,7 @@
     "babel-plugin-dynamic-import-node": "^2.2.0",
     "chai": "^4.2.0",
     "codecov": "^3.2.0",
+    "jsdoc-to-markdown": "^4.0.1",
     "mocha": "^5.2.0",
     "nyc": "^13.3.0",
     "sinon": "^7.3.1",
