@@ -47,7 +47,7 @@ const registerConnector = (name, connector) => {
 const splitLink = (link) => {
   let splitted = link.split(DID_DELIMITER)
   let connector = splitted[2]
-  let reference = splitted[3]
+  let reference = splitted.slice(3).join(DID_DELIMITER)
   return { 'connector': connector, 'reference': reference }
 }
 
