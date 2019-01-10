@@ -83,9 +83,10 @@ describe('desciple-core-api', () => {
       await discipl.attest(attestorSsid, 'agree', claimlink2)
       await discipl.revoke(ssid, claimlink2)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, { 'did': 'did:discipl:memory:1234' }, attestorSsid])
+      let verifiedAttestor = await discipl.verify('agree', claimlink2, [attestorSsid])
 
       // The first ssid that is valid and proves the attestation should be returned
+      // but none such was given so it should not find any matching attestor
       expect(verifiedAttestor).to.equal(null)
     })
 
@@ -267,15 +268,12 @@ describe('desciple-core-api', () => {
       verifyStub.onCall(0).returns('attestationRef')
       // A revocation of the attestation will be found
       verifyStub.onCall(1).returns('attestationRevocationRef')
-      // No revocations of the revocation of the attestation will be found
+      // No revocations of the revocation will be found
       verifyStub.onCall(2).returns(null)
-      // verifyStub.onCall(3).returns(null)
-
-      let getSsidOfClaimStub = sinon.stub().returns({ pubkey: 'attestor' })
 
       let getNameStub = sinon.stub().returns('mock')
 
-      let stubConnector = { verify: verifyStub, getName: getNameStub, getSsidOfClaim: getSsidOfClaimStub }
+      let stubConnector = { verify: verifyStub, getName: getNameStub }
 
       await discipl.registerConnector('mock', stubConnector)
 
@@ -285,12 +283,45 @@ describe('desciple-core-api', () => {
       expect(verifyStub.args[0]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { agree: claimlink }])
       expect(verifyStub.args[1]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
       expect(verifyStub.args[2]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationrevocationlink }])
-      // expect(verifyStub.args[3]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
-
-      expect(getSsidOfClaimStub.calledOnce).to.equal(false)
-      // expect(getSsidOfClaimStub.args[0]).to.deep.equal(['attestationRef'])
 
       expect(getNameStub.callCount).to.equal(2)
+
+      expect(verifiedAttestor).to.equal(null)
+    })
+
+    it('should not be able to verify an attestation, if the claim is revoked', async () => {
+      let attestorSsid = { did: 'did:discipl:mock:attestor' }
+      let claimlink = 'link:discipl:mock:claimRef'
+      let attestationlink = 'link:discipl:mock:attestationRef'
+      let claimrevocationlink = 'link:discipl:mock:claimRevocationRef'
+
+      let getSsidOfClaimStub = sinon.stub().returns({ pubkey: 'claimant' })
+      let verifyStub = sinon.stub()
+
+      verifyStub.onCall(0).returns('attestationRef')
+      // No revocation of the attestation will be found
+      verifyStub.onCall(1).returns(null)
+      // A  revocations of the claim will be found
+      verifyStub.onCall(2).returns('claimRevocationRef')
+      // No revocation of the revocation of the claim will be found
+      verifyStub.onCall(3).returns(null)
+
+      let getNameStub = sinon.stub().returns('mock')
+
+      let stubConnector = { verify: verifyStub, getName: getNameStub, getSsidOfClaim: getSsidOfClaimStub }
+
+      await discipl.registerConnector('mock', stubConnector)
+
+      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+
+      expect(verifyStub.callCount).to.equal(4)
+      expect(verifyStub.args[0]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { agree: claimlink }])
+      expect(verifyStub.args[1]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
+      expect(verifyStub.args[2]).to.deep.equal([{ did: 'did:discipl:mock:claimant', connector: stubConnector, pubkey: 'claimant' }, { revoke: claimlink }])
+      expect(verifyStub.args[3]).to.deep.equal([{ did: 'did:discipl:mock:claimant', connector: stubConnector, pubkey: 'claimant' }, { revoke: claimrevocationlink }])
+
+      expect(getNameStub.callCount).to.equal(3)
+      expect(getSsidOfClaimStub.callCount).to.equal(1)
 
       expect(verifiedAttestor).to.equal(null)
     })
