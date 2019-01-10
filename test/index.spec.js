@@ -169,6 +169,25 @@ describe('desciple-core-api', () => {
       expect(claim.previous).to.equal(prevClaimlink)
     })
 
+    it('should be able to get a claim added through claims with columns in the did', async () => {
+      let claimlink = 'link:discipl:mock:claimRef:with:some:columns'
+      let prevClaimlink = 'link:discipl:mock:previous'
+
+      let getStub = sinon.stub().returns({ 'data': { 'need': 'wine' }, 'previous': 'previous' })
+      let getNameStub = sinon.stub().returns('mock')
+
+      let stubConnector = { get: getStub, getName: getNameStub }
+      await discipl.registerConnector('mock', stubConnector)
+
+      let claim = await discipl.get(claimlink)
+
+      expect(getStub.calledOnceWith('claimRef:with:some:columns', null), 'Unexpected value for claim ref').to.equal(true)
+      expect(getNameStub.calledOnce).to.equal(true)
+
+      expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({ 'need': 'wine' }))
+      expect(claim.previous).to.equal(prevClaimlink)
+    })
+
     it('should be able to attest a claim', async () => {
       let ssid = { did: 'did:discipl:mock:111' }
       let claimlink = 'link:discipl:mock:claimRef'
