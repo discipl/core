@@ -150,7 +150,7 @@ const verify = async (predicate, link, ssids, all = false) => {
     let reference = await ssid.connector.verify(ssid, attestation)
     if (reference) {
       if (await verify(REVOKE_PREDICATE, getLink(ssid, reference), [ssid]) == null) {
-        if (await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
+        if (predicate === REVOKE_PREDICATE || await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
           if (all) {
             result.push(ssid)
           } else {
