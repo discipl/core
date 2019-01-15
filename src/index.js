@@ -241,7 +241,6 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
   if (res != null) {
     let data = res.data
     if (res.previous && (SsidDidOrLink.indexOf(DID_PREFIX) === 0)) {
-      console.log('Get previous of channel' + res.previous)
       exportData[currentSsid.did] = await exportLD(res.previous, maxdepth, ssid, visitedStack)
     }
     exportData[currentSsid.did][currentLink] = {}
@@ -250,9 +249,7 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
         exportData[currentSsid.did][currentLink][elem] = {}
         let value = data[elem]
         try {
-          console.log('Getting export for..' + value)
           exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
-          console.log('Got' + exportData[currentSsid.did][currentLink][elem])
         } catch (err) {
           exportData[currentSsid.did][currentLink][elem][value] = { 'export-error': err }
         }
