@@ -2,7 +2,7 @@
   "name": "discipl-core",
   "version": "0.4.0",
   "description": "Discipl Core API",
-  "main": "index.js",
+  "main": "src/index.js",
   "repository": "https://github.com/discipl/core",
   "author": "Bas Kaptijn",
   "license": "GPL-3.0",
