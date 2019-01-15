@@ -1,11 +1,11 @@
 import crypto from 'crypto-js'
+import { loadConnector } from './connector-loader'
 
 const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
 const LINK_PREFIX = 'link' + DID_DELIMITER + 'discipl' + DID_DELIMITER
 const DID_PREFIX = 'did' + DID_DELIMITER + 'discipl' + DID_DELIMITER
 const REVOKE_PREDICATE = 'revoke'
-const CONNECTOR_MODULE_PREFIX = 'discipl-core-'
 
 var disciplCoreConnectors = []
 
@@ -16,11 +16,10 @@ var disciplCoreConnectors = []
 /**
  * requires and holds in memory the given discipl connector (if not done before)
  */
-const initializeConnector = async (connector) => {
-  if (!Object.keys(disciplCoreConnectors).includes(connector)) {
-    let module = await import(CONNECTOR_MODULE_PREFIX + connector)
-    let ConnectorModuleClass = module.default
-    registerConnector(connector, new ConnectorModuleClass())
+const initializeConnector = async (connectorName) => {
+  if (!Object.keys(disciplCoreConnectors).includes(connectorName)) {
+    let ConnectorModuleClass = await loadConnector(connectorName)
+    registerConnector(connectorName, new ConnectorModuleClass())
   }
 }
 
@@ -48,7 +47,7 @@ const registerConnector = (name, connector) => {
 const splitLink = (link) => {
   let splitted = link.split(DID_DELIMITER)
   let connector = splitted[2]
-  let reference = splitted[3]
+  let reference = splitted.slice(3).join(DID_DELIMITER)
   return { 'connector': connector, 'reference': reference }
 }
 
@@ -151,7 +150,7 @@ const verify = async (predicate, link, ssids, all = false) => {
     let reference = await ssid.connector.verify(ssid, attestation)
     if (reference) {
       if (await verify(REVOKE_PREDICATE, getLink(ssid, reference), [ssid]) == null) {
-        if (await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
+        if (predicate === REVOKE_PREDICATE || await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
           if (all) {
             result.push(ssid)
           } else {
@@ -247,14 +246,16 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
     }
     exportData[currentSsid.did][currentLink] = {}
     for (let elem in data) {
-      exportData[currentSsid.did][currentLink][elem] = {}
-      let value = data[elem]
-      try {
-        console.log('Getting export for..' + value)
-        exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
-        console.log('Got' + exportData[currentSsid.did][currentLink][elem])
-      } catch (err) {
-        exportData[currentSsid.did][currentLink][elem][value] = { 'export-error': err }
+      if (data.hasOwnProperty(elem)) {
+        exportData[currentSsid.did][currentLink][elem] = {}
+        let value = data[elem]
+        try {
+          console.log('Getting export for..' + value)
+          exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
+          console.log('Got' + exportData[currentSsid.did][currentLink][elem])
+        } catch (err) {
+          exportData[currentSsid.did][currentLink][elem][value] = { 'export-error': err }
+        }
       }
     }
   } else {
