@@ -114,17 +114,13 @@ describe('desciple-core-api', () => {
       let attestationLink = await discipl.attest(ssid, 'agree', claimlink3)
       let exportedData = await discipl.exportLD(ssid)
 
-      console.log(JSON.stringify(exportedData))
-
       expect(Object.keys(exportedData[ssid.did])[0]).to.equal(claimlink1)
       expect(Object.keys(exportedData[ssid.did])[1]).to.equal(claimlink2)
       expect(Object.keys(exportedData[ssid.did])[2]).to.equal(attestationLink)
       expect(exportedData[ssid.did][claimlink1]).to.deep.equal({ 'need': 'beer' })
       expect(exportedData[ssid.did][claimlink2]).to.deep.equal({ 'need': 'wine' })
       expect(exportedData[ssid.did][attestationLink]['agree'][ssid2.did][claimlink3]).to.deep.equal({ 'need': 'water' })
-
     })
-
   },
   describe('The disciple core API with mocked connector', () => {
     it('should be able to retrieve a new mocked ssid asynchronously', async () => {
