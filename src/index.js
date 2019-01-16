@@ -240,8 +240,9 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
   let res = await get(currentLink, ssid)
   if (res != null) {
     let data = res.data
-    if (res.previous && (SsidDidOrLink.indexOf(DID_PREFIX) === 0)) {
-      exportData[currentSsid.did] = await exportLD(res.previous, maxdepth, ssid, visitedStack)
+    console.log("ssiddidorlink:"+JSON.stringify(currentSsid.did)+" "+JSON.stringify(SsidDidOrLink)+" "+res.previous)
+    if (res.previous && (typeof SsidDidOrLink === 'string' && SsidDidOrLink.indexOf(LINK_PREFIX) != 0)) {
+      exportData[currentSsid.did] = await exportLD(res.previous, maxdepth, currentSsid.did, visitedStack)
     }
     exportData[currentSsid.did][currentLink] = {}
     for (let elem in data) {
