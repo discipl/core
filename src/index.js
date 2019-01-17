@@ -193,6 +193,7 @@ const subscribe = async (ssid) => {
 const detectSsidLinkFromDidSsidOrLink = async (value) => {
   let currentLink = null
   let currentSsid = null
+  let withPrevious = false
   if (typeof value === 'string') {
     if (await isValidLink(value)) {
       currentLink = value
@@ -200,16 +201,18 @@ const detectSsidLinkFromDidSsidOrLink = async (value) => {
     } else if (value.indexOf(DID_PREFIX) === 0) {
       currentSsid = await expandSsid({ 'did': value })
       currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
+      withPrevious = true
     } else {
       return null
     }
   } else if (Object.keys(value).includes('did')) {
     currentSsid = await expandSsid(value)
     currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
+    withPrevious = true
   } else {
     return null
   }
-  return { 'ssid': currentSsid, 'link': currentLink }
+  return { 'ssid': currentSsid, 'link': currentLink, 'withPrevious': withPrevious }
 }
 
 /**
@@ -219,47 +222,52 @@ const detectSsidLinkFromDidSsidOrLink = async (value) => {
  * will contain the value MAX_DEPTH_REACHED alongside of the link instead of an exported dataset. You can use this method to iteratively expand the dataset using the link that was not followed.
  * A claim is never exported twice; circulair references are not followed.
  */
-const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack = []) => {
-  let exportData = {}
-
+const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) => {
   let ssidlink = await detectSsidLinkFromDidSsidOrLink(SsidDidOrLink)
   if (ssidlink == null) {
     return SsidDidOrLink
   }
   let currentLink = ssidlink.link
   let currentSsid = ssidlink.ssid
+  if (ssidlink.withPrevious) {
+    withPrevious = true
+  }
 
   if (visitedStack.length >= maxdepth) {
     return { SsidDidOrLink: MAX_DEPTH_REACHED }
-  } else {
+  } else if (!withPrevious) {
     visitedStack.push(currentLink)
   }
 
-  exportData[currentSsid.did] = {}
+  let channelData = []
 
   let res = await get(currentLink, ssid)
+
   if (res != null) {
     let data = res.data
-    if (res.previous && (SsidDidOrLink.indexOf(DID_PREFIX) === 0)) {
-      exportData[currentSsid.did] = await exportLD(res.previous, maxdepth, ssid, visitedStack)
+
+    if (res.previous && withPrevious) {
+      let prevData = await exportLD(res.previous, maxdepth, currentSsid.did, visitedStack, true)
+      channelData = prevData[currentSsid.did]
     }
-    exportData[currentSsid.did][currentLink] = {}
+
+    let linkData = {}
     for (let elem in data) {
       if (data.hasOwnProperty(elem)) {
-        exportData[currentSsid.did][currentLink][elem] = {}
         let value = data[elem]
         try {
-          exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
+          linkData[elem] = await exportLD(value, maxdepth, ssid, visitedStack)
         } catch (err) {
-          exportData[currentSsid.did][currentLink][elem][value] = { 'export-error': err }
+          linkData[elem] = { [value]: { 'export-error': err } }
         }
       }
     }
+    channelData.push({ [currentLink]: linkData })
   } else {
-    exportData[currentSsid.did][currentLink] = 'NOT_FOUND'
+    channelData.push({ [currentLink]: 'NOT_FOUND' })
   }
 
-  return exportData
+  return { [currentSsid.did]: channelData }
 }
 
 /**
