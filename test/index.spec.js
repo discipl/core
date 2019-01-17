@@ -100,7 +100,7 @@ describe('desciple-core-api', () => {
       let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
       let exportedData = await discipl.exportLD(attestorSsid)
 
-      expect(exportedData[attestorSsid.did][attestationLink]['agree'][ssid.did][claimlink2]).to.deep.equal({ 'need': 'wine' })
+      expect(exportedData[attestorSsid.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: { 'need': 'wine' } } ] } } })
     })
 
     it('should be able to export multiple (linked) verifiable claims in a channel in order', async () => {
@@ -114,12 +114,9 @@ describe('desciple-core-api', () => {
       let attestationLink = await discipl.attest(ssid, 'agree', claimlink3)
       let exportedData = await discipl.exportLD(ssid)
 
-      expect(Object.keys(exportedData[ssid.did])[0]).to.equal(claimlink1)
-      expect(Object.keys(exportedData[ssid.did])[1]).to.equal(claimlink2)
-      expect(Object.keys(exportedData[ssid.did])[2]).to.equal(attestationLink)
-      expect(exportedData[ssid.did][claimlink1]).to.deep.equal({ 'need': 'beer' })
-      expect(exportedData[ssid.did][claimlink2]).to.deep.equal({ 'need': 'wine' })
-      expect(exportedData[ssid.did][attestationLink]['agree'][ssid2.did][claimlink3]).to.deep.equal({ 'need': 'water' })
+      expect(exportedData[ssid.did][0]).to.deep.equal({ [claimlink1]: { 'need': 'beer' } })
+      expect(exportedData[ssid.did][1]).to.deep.equal({ [claimlink2]: { 'need': 'wine' } })
+      expect(exportedData[ssid.did][2]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid2.did]: [ { [claimlink3]: { 'need': 'water' } } ] } } })
     })
   },
   describe('The disciple core API with mocked connector', () => {

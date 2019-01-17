@@ -223,8 +223,6 @@ const detectSsidLinkFromDidSsidOrLink = async (value) => {
  * A claim is never exported twice; circulair references are not followed.
  */
 const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) => {
-  let exportData = {}
-
   let ssidlink = await detectSsidLinkFromDidSsidOrLink(SsidDidOrLink)
   if (ssidlink == null) {
     return SsidDidOrLink
@@ -241,7 +239,7 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
     visitedStack.push(currentLink)
   }
 
-  exportData[currentSsid.did] = {}
+  let channelData = []
 
   let res = await get(currentLink, ssid)
 
@@ -250,25 +248,26 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
 
     if (res.previous && withPrevious) {
       let prevData = await exportLD(res.previous, maxdepth, currentSsid.did, visitedStack, true)
-      exportData[currentSsid.did] = prevData[currentSsid.did]
+      channelData = prevData[currentSsid.did]
     }
-    exportData[currentSsid.did][currentLink] = {}
+
+    let linkData = {}
     for (let elem in data) {
       if (data.hasOwnProperty(elem)) {
-        exportData[currentSsid.did][currentLink][elem] = {}
         let value = data[elem]
         try {
-          exportData[currentSsid.did][currentLink][elem] = await exportLD(value, maxdepth, ssid, visitedStack)
+          linkData[elem] = await exportLD(value, maxdepth, ssid, visitedStack)
         } catch (err) {
-          exportData[currentSsid.did][currentLink][elem][value] = { 'export-error': err }
+          linkData[elem] = { [value]: { 'export-error': err } }
         }
       }
     }
+    channelData.push({ [currentLink]: linkData })
   } else {
-    exportData[currentSsid.did][currentLink] = 'NOT_FOUND'
+    channelData.push({ [currentLink]: 'NOT_FOUND' })
   }
 
-  return exportData
+  return { [currentSsid.did]: channelData }
 }
 
 /**
