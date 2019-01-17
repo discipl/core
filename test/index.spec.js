@@ -3,6 +3,7 @@ import { expect } from 'chai'
 import * as discipl from '../src/index.js'
 
 import sinon from 'sinon'
+import { take, toArray} from 'rxjs/operators'
 
 describe('desciple-core-api', () => {
   describe('The disciple core API with memory connector', () => {
@@ -88,6 +89,43 @@ describe('desciple-core-api', () => {
       // The first ssid that is valid and proves the attestation should be returned
       // but none such was given so it should not find any matching attestor
       expect(verifiedAttestor).to.equal(null)
+    })
+
+    it('be able to observe', async () => {
+      let ssid = await discipl.newSsid('memory')
+      console.log("Previous test ssid " + ssid.pubkey)
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      let observable = await discipl.observe(ssid)
+      let resultPromise = observable.pipe(take(1)).toPromise()
+      await discipl.claim(ssid, { 'need': 'wine' })
+
+      let result = await resultPromise
+
+      expect(result).to.deep.equal({
+        'claim': {
+          'data': {
+            'need': 'wine'
+          },
+          'previous': claimLink
+        },
+        'ssid': {
+          'pubkey': ssid.pubkey
+        }
+      })
+    })
+
+    it('be able to observe historically', async () => {
+      let ssid = await discipl.newSsid('memory')
+      //console.log("PROPER SSID: " + ssid.pubkey)
+      let claimLink = await discipl.claim(ssid, {'need': 'beer'})
+      let observable = await discipl.observe(ssid, null, true)
+
+      await discipl.claim(ssid, {'need': 'wine'})
+      let resultPromise = observable.pipe(take(2)).pipe(toArray()).toPromise()
+
+      let result = await resultPromise
+
+      expect(result).to.deep.equal([])
     })
 
     it('should be able to export linked verifiable claim channels', async () => {
