@@ -90,7 +90,7 @@ describe('desciple-core-api', () => {
       expect(verifiedAttestor).to.equal(null)
     })
 
-    it('should be able to export linked verifiable claim channels', async () => {
+    it('should be able to export linked verifiable claim channels given a ssid', async () => {
       let ssid = await discipl.newSsid('memory')
       await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
@@ -99,6 +99,19 @@ describe('desciple-core-api', () => {
 
       let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
       let exportedData = await discipl.exportLD(attestorSsid)
+
+      expect(exportedData[attestorSsid.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: { 'need': 'wine' } } ] } } })
+    })
+
+    it('should be able to export linked verifiable claim channels given a did', async () => {
+      let ssid = await discipl.newSsid('memory')
+      await discipl.claim(ssid, { 'need': 'beer' })
+      let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
+
+      let attestorSsid = await discipl.newSsid('memory')
+
+      let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
+      let exportedData = await discipl.exportLD(attestorSsid.did)
 
       expect(exportedData[attestorSsid.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: { 'need': 'wine' } } ] } } })
     })

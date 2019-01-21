@@ -73,7 +73,7 @@ const isValidLink = async (link) => {
   try {
     let connector = splitLink(link).connector
     await getConnector(connector)
-    return true
+    return link.indexOf(LINK_PREFIX) === 0
   } catch (e) {
     return false
   }
