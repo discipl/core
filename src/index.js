@@ -1,7 +1,7 @@
 import crypto from 'crypto-js'
 import { loadConnector } from './connector-loader'
 import { Observable } from 'rxjs'
-import { filter, map, mergeMap, concat } from 'rxjs/operators'
+import { filter, map, concat } from 'rxjs/operators'
 
 const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
@@ -121,7 +121,6 @@ const newSsid = async (connector) => {
  */
 const claim = async (ssid, data) => {
   await expandSsid(ssid)
-  //console.log('PUBKEY INTO CONNECTOR: ' + ssid.pubkey)
   let reference = await ssid.connector.claim(ssid, data)
   return getLink(ssid, reference)
 }
@@ -190,14 +189,14 @@ const get = async (link, ssid = null) => {
  * @returns {Promise<Observable<any>>}
  */
 const observe = async (ssid, claimFilter, historical = false) => {
-  //console.log("SSID AS INPUT: " + ssid.pubkey)
+  if (ssid == null) {
+    throw Error('Observe without ssid is not supported')
+  }
+
   let expandedSsid = await expandSsid(ssid)
-  //console.log("SSID FOR OBSERVE: " + ssid.pubkey)
   let currentObservable = (await expandedSsid.connector.observe(ssid, claimFilter))
     .pipe(map(claim => {
-      //console.log("Somethign")
       claim['claim'].previous = getLink(expandedSsid, claim['claim'].previous)
-      //console.log('CurrObs: ' + JSON.stringify(claim))
       return claim
     }))
 
@@ -205,39 +204,28 @@ const observe = async (ssid, claimFilter, historical = false) => {
     return currentObservable
   }
 
-  if (ssid == null) {
-    throw Error('Historical mode is not supported without an ssid')
-  }
-
   let historyObservable = Observable.create(async (observer) => {
-    console.log("1")
     let latestClaim = getLink(ssid, await expandedSsid.connector.getLatestClaim(ssid))
 
     let claims = []
 
     let current = await get(latestClaim)
-    console.log("CURRENT CLAIM")
-    console.log(current)
     while (current != null) {
       current['ssid'] = ssid
       claims.unshift(current)
 
       if (current.previous) {
-        current = get(current.previous)
-      }
-      else {
+        current = await get(current.previous)
+      } else {
         current = null
       }
     }
 
     for (let claim of claims) {
-      console.log("Emitting")
-      console.log(claim)
       observer.next(claim)
     }
   })
     .pipe(filter(claim => {
-      console.log("2")
       if (claimFilter != null) {
         for (let predicate of Object.keys(claimFilter)) {
           if (claim['claim']['data'][predicate] == null) {
@@ -251,8 +239,6 @@ const observe = async (ssid, claimFilter, historical = false) => {
           }
         }
       }
-      console.log("CLAIM")
-      //console.log(claim)
       return true
     }))
 
