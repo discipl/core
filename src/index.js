@@ -201,6 +201,7 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
   let currentObservable = (await expandedSsid.connector.observe(ssid, claimFilter))
     .pipe(map(claim => {
       claim['claim'].previous = getLink(expandedSsid, claim['claim'].previous)
+      claim['ssid'] = { 'did': expandedSsid.did }
       return claim
     }))
 
@@ -250,6 +251,8 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
 const observeAll = async (connector, claimFilter) => {
   return (await connector.observe(null, claimFilter)).pipe(map(claim => {
     claim['claim'].previous = getLink(null, claim['claim'].previous, connector.getName())
+    let pubkey = claim['ssid']['pubkey']
+    claim['ssid'] = {'did': DID_PREFIX + connector.getName() + DID_DELIMITER + pubkey}
     return claim
   }))
 }

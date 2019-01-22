@@ -108,7 +108,7 @@ describe('desciple-core-api', () => {
           'previous': claimLink
         },
         'ssid': {
-          'pubkey': ssid.pubkey
+          'did': ssid.did
         }
       })
     })
@@ -130,7 +130,7 @@ describe('desciple-core-api', () => {
           'previous': claimLink
         },
         'ssid': {
-          'pubkey': ssid.pubkey
+          'did': ssid.did
         }
       })
     })
