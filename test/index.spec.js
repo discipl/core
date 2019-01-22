@@ -3,6 +3,7 @@ import { expect } from 'chai'
 import * as discipl from '../src/index.js'
 
 import sinon from 'sinon'
+import { take, toArray } from 'rxjs/operators'
 
 describe('desciple-core-api', () => {
   describe('The disciple core API with memory connector', () => {
@@ -90,6 +91,143 @@ describe('desciple-core-api', () => {
       expect(verifiedAttestor).to.equal(null)
     })
 
+    it('be able to observe', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      let observable = await discipl.observe(ssid)
+      let resultPromise = observable.pipe(take(1)).toPromise()
+      await discipl.claim(ssid, { 'need': 'wine' })
+
+      let result = await resultPromise
+
+      expect(result).to.deep.equal({
+        'claim': {
+          'data': {
+            'need': 'wine'
+          },
+          'previous': claimLink
+        },
+        'ssid': {
+          'pubkey': ssid.pubkey
+        }
+      })
+    })
+
+    it('be able to observe platform-wide', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      let observable = await discipl.observe(null, {}, false, await discipl.getConnector('memory'))
+      let resultPromise = observable.pipe(take(1)).toPromise()
+      await discipl.claim(ssid, { 'need': 'wine' })
+
+      let result = await resultPromise
+
+      expect(result).to.deep.equal({
+        'claim': {
+          'data': {
+            'need': 'wine'
+          },
+          'previous': claimLink
+        },
+        'ssid': {
+          'pubkey': ssid.pubkey
+        }
+      })
+    })
+
+    it('be able to observe historically', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      let observable = await discipl.observe(ssid, null, true)
+
+      await discipl.claim(ssid, { 'need': 'wine' })
+      let resultPromise = observable.pipe(take(2)).pipe(toArray()).toPromise()
+
+      let result = await resultPromise
+
+      // Delete the connectors to prevent circular references from messing up testing
+      delete result[0].ssid.connector
+      delete result[1].ssid.connector
+
+      expect(result).to.deep.equal([
+        {
+          'data': {
+            'need': 'beer'
+          },
+          'previous': null,
+          'ssid': ssid
+        },
+        {
+          'data': {
+            'need': 'wine'
+          },
+          'previous': claimLink,
+          'ssid': ssid
+        }
+
+      ])
+    })
+
+    it('be able to observe historically with a filter', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      await discipl.claim(ssid, { 'need': 'wine' })
+      await discipl.claim(ssid, { 'need': 'tea' })
+      let observable = await discipl.observe(ssid, { 'need': 'wine' }, true)
+
+      let resultPromise = observable.pipe(take(1)).toPromise()
+
+      let result = await resultPromise
+
+      // Delete the connectors to prevent circular references from messing up testing
+      delete result.ssid.connector
+
+      expect(result).to.deep.equal(
+        {
+          'data': {
+            'need': 'wine'
+          },
+          'previous': claimLink,
+          'ssid': ssid
+        }
+      )
+    })
+
+    it('be able to observe historically with a filter on the predicate', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'wine' })
+      await discipl.claim(ssid, { 'desire': 'wine' })
+      await discipl.claim(ssid, { 'need': 'wine' })
+      let observable = await discipl.observe(ssid, { 'desire': null }, true)
+
+      let resultPromise = observable.pipe(take(1)).toPromise()
+
+      let result = await resultPromise
+
+      // Delete the connectors to prevent circular references from messing up testing
+      delete result.ssid.connector
+
+      expect(result).to.deep.equal(
+        {
+          'data': {
+            'desire': 'wine'
+          },
+          'previous': claimLink,
+          'ssid': ssid
+        }
+      )
+    })
+
+    it('not be able to observe historically without an ssid', async () => {
+      try {
+        await discipl.observe(null, {}, false)
+        expect(false).to.equal(true)
+      } catch (e) {
+        expect(e).to.be.a('error')
+        expect(e.message).to.equal('Observe without ssid or connector is not supported')
+      }
+    })
+
     it('should be able to export linked verifiable claim channels given a ssid', async () => {
       let ssid = await discipl.newSsid('memory')
       await discipl.claim(ssid, { 'need': 'beer' })
@@ -164,7 +302,7 @@ describe('desciple-core-api', () => {
 
       expect(claimlink).to.equal('link:discipl:mock:claimRef')
     })
-
+    /*
     it('should be able to add a claim to some new channel through a claim() method with an object as reference', async () => {
       let ssid = { did: 'did:discipl:mock:111' }
       let claimStub = sinon.stub().returns({ someKey: 'infoNeededByConnector' })
@@ -179,7 +317,7 @@ describe('desciple-core-api', () => {
 
       expect(claimlink).to.equal('link:discipl:mock:jdkIBFi8PojrrOV/Z9qtuS+8hDyUUMUkono9Rof4ZxlA6OIQjOWcHeSWGD73fn2I')
     })
-
+*/
     it('should be able to get a claim added through claims', async () => {
       let claimlink = 'link:discipl:mock:claimRef'
       let prevClaimlink = 'link:discipl:mock:previous'

@@ -14,11 +14,12 @@
   },
   "dependencies": {
     "crypto-js": "3.1.9-1",
-    "debug": "3.1.0"
+    "debug": "3.1.0",
+    "rxjs": "^6.3.3"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
-    "@babel/preset-env": "^7.2.3",
+    "@babel/preset-env": "^7.3.1",
     "@babel/register": "^7.0.0",
     "babel-eslint": "^10.0.1",
     "babel-plugin-dynamic-import-node": "^2.2.0",
@@ -27,7 +28,7 @@
     "discipl-core-memory": "git+https://github.com/discipl/discipl-core-memory.git",
     "mocha": "^5.2.0",
     "nyc": "^13.1.0",
-    "sinon": "^7.2.2",
+    "sinon": "^7.2.3",
     "standard": "^12.0.1"
   }
 }

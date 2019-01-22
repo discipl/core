@@ -1,5 +1,6 @@
-import crypto from 'crypto-js'
 import { loadConnector } from './connector-loader'
+import { Observable } from 'rxjs'
+import { filter, map, concat } from 'rxjs/operators'
 
 const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
@@ -52,16 +53,18 @@ const splitLink = (link) => {
 }
 
 /**
- * returns a link string for the given claim in the channel of the given ssid. claim can be a string in which case it needs to be a connector specific reference string, or it is a object holding claim(s) of which the hash of the stringified version is used as reference
+ * returns a link string for the given claim in the channel of the given ssid. claim is supposed to be a connector specific reference string
  */
 const getLink = (ssid, claim) => {
-  if (claim) {
-    let connector = ssid.connector.getName()
-    if (typeof claim === 'string') {
-      return LINK_PREFIX + connector + DID_DELIMITER + claim
-    } else {
-      return LINK_PREFIX + connector + DID_DELIMITER + getHash(ssid, claim)
-    }
+  return asLink(ssid.connector, claim)
+}
+
+/**
+ * returns a link string for the given claim reference on the platform of the given connector name. returns null if the claim reference is null or not a string
+ */
+const asLink = (connector, claimReference) => {
+  if ((claimReference) && (typeof claimReference === 'string')) {
+    return LINK_PREFIX + connector.getName() + DID_DELIMITER + claimReference
   }
   return null
 }
@@ -87,13 +90,6 @@ const getSsidOfLinkedClaim = async (link) => {
   let conn = await getConnector(connector)
   let ssid = await conn.getSsidOfClaim(reference)
   return { 'did': DID_PREFIX + conn.getName() + DID_DELIMITER + ssid.pubkey }
-}
-
-/**
- * returns a HMAC-384 peppered hash of the given data with the did of the given ssid as key
- */
-const getHash = (ssid, data) => {
-  return crypto.enc.Base64.stringify(crypto.HmacSHA384(data, ssid.did))
 }
 
 const expandSsid = async (ssid) => {
@@ -174,16 +170,83 @@ const get = async (link, ssid = null) => {
   let { connector, reference } = splitLink(link)
   let conn = await getConnector(connector)
   let result = await conn.get(reference, ssid)
-  result.previous = getLink({ 'connector': conn }, result.previous)
+  result.previous = asLink(conn, result.previous)
   return result
 }
 
 /**
- * Subscribes a given callback function to be called when new claims are found in a given channel. Note that it will start at the end of the channel; previous claims that has already been added in the channel are ignored.
- * @param {json} ssid - The ssid json object containing did as public key : {pubkey:did, privkey:pkey}. This should be the ssid of the channel to subscribe to
+ * Subscribes a given callback function to be called when new claims are found with given parameters.
+ *
+ * @param ssid {object} ssid to filter claims
+ * @param claimFilter {object} filters by the content of claims
+ * @param historical {boolean} if true, the result will start at the beginning of the channel
+ * @param connector {object} needs to be provided in order to listen platform-wide without ssid
+ * @returns {Promise<Observable<any>>}
  */
-const subscribe = async (ssid) => {
-  return ssid.connector.subscribe(ssid)
+const observe = async (ssid, claimFilter, historical = false, connector = null) => {
+  if (connector != null && ssid == null) {
+    return observeAll(connector, claimFilter)
+  }
+  if (ssid == null) {
+    throw Error('Observe without ssid or connector is not supported')
+  }
+
+  let expandedSsid = await expandSsid(ssid)
+  let currentObservable = (await expandedSsid.connector.observe(ssid, claimFilter))
+    .pipe(map(claim => {
+      claim['claim'].previous = getLink(expandedSsid, claim['claim'].previous)
+      return claim
+    }))
+
+  if (!historical) {
+    return currentObservable
+  }
+
+  let historyObservable = Observable.create(async (observer) => {
+    let latestClaim = getLink(ssid, await expandedSsid.connector.getLatestClaim(ssid))
+
+    let claims = []
+
+    let current = await get(latestClaim)
+    while (current != null) {
+      current['ssid'] = ssid
+      claims.unshift(current)
+
+      if (current.previous) {
+        current = await get(current.previous)
+      } else {
+        current = null
+      }
+    }
+
+    for (let claim of claims) {
+      observer.next(claim)
+    }
+  }).pipe(filter(claim => {
+    if (claimFilter != null) {
+      for (let predicate of Object.keys(claimFilter)) {
+        if (claim['data'][predicate] == null) {
+          // Predicate not present in claim
+          return false
+        }
+
+        if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['data'][predicate]) {
+          // Object is provided in filter, but does not match with actual claim
+          return false
+        }
+      }
+    }
+    return true
+  }))
+
+  return historyObservable.pipe(concat(currentObservable))
+}
+
+const observeAll = async (connector, claimFilter) => {
+  return (await connector.observe(null, claimFilter)).pipe(map(claim => {
+    claim['claim'].previous = asLink(connector, claim['claim'].previous)
+    return claim
+  }))
 }
 
 /**
@@ -289,6 +352,6 @@ export {
   get,
   exportLD,
   revoke,
-  subscribe,
+  observe,
   MAX_DEPTH_REACHED
 }
