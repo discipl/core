@@ -145,7 +145,7 @@ describe('desciple-core-api', () => {
 
       let result = await resultPromise
 
-      // Delete the connectors to prevent circular references from messing up testingnpm
+      // Delete the connectors to prevent circular references from messing up testing
       delete result[0].ssid.connector
       delete result[1].ssid.connector
 
@@ -166,6 +166,56 @@ describe('desciple-core-api', () => {
         }
 
       ])
+    })
+
+    it('be able to observe historically with a filter', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      await discipl.claim(ssid, { 'need': 'wine' })
+      await discipl.claim(ssid, { 'need': 'tea' })
+      let observable = await discipl.observe(ssid, { 'need': 'wine' }, true)
+
+      let resultPromise = observable.pipe(take(1)).toPromise()
+
+      let result = await resultPromise
+
+      // Delete the connectors to prevent circular references from messing up testing
+      delete result.ssid.connector
+
+      expect(result).to.deep.equal(
+        {
+          'data': {
+            'need': 'wine'
+          },
+          'previous': claimLink,
+          'ssid': ssid
+        }
+      )
+    })
+
+    it('be able to observe historically with a filter on the predicate', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'wine' })
+      await discipl.claim(ssid, { 'desire': 'wine' })
+      await discipl.claim(ssid, { 'need': 'wine' })
+      let observable = await discipl.observe(ssid, { 'desire': null }, true)
+
+      let resultPromise = observable.pipe(take(1)).toPromise()
+
+      let result = await resultPromise
+
+      // Delete the connectors to prevent circular references from messing up testing
+      delete result.ssid.connector
+
+      expect(result).to.deep.equal(
+        {
+          'data': {
+            'desire': 'wine'
+          },
+          'previous': claimLink,
+          'ssid': ssid
+        }
+      )
     })
 
     it('not be able to observe historically without an ssid', async () => {

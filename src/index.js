@@ -231,12 +231,12 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
   }).pipe(filter(claim => {
     if (claimFilter != null) {
       for (let predicate of Object.keys(claimFilter)) {
-        if (claim['claim']['data'][predicate] == null) {
+        if (claim['data'][predicate] == null) {
           // Predicate not present in claim
           return false
         }
 
-        if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['claim']['data'][predicate]) {
+        if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['data'][predicate]) {
           // Object is provided in filter, but does not match with actual claim
           return false
         }
