@@ -56,9 +56,9 @@ const splitLink = (link) => {
 /**
  * returns a link string for the given claim in the channel of the given ssid. claim can be a string in which case it needs to be a connector specific reference string, or it is a object holding claim(s) of which the hash of the stringified version is used as reference
  */
-const getLink = (ssid, claim) => {
+const getLink = (ssid, claim, connectorName = null) => {
   if (claim) {
-    let connector = ssid.connector.getName()
+    let connector = connectorName != null ? connectorName : ssid.connector.getName()
     if (typeof claim === 'string') {
       return LINK_PREFIX + connector + DID_DELIMITER + claim
     } else {
@@ -186,11 +186,15 @@ const get = async (link, ssid = null) => {
  * @param ssid {object} ssid to filter claims
  * @param claimFilter {object} filters by the content of claims
  * @param historical {boolean} if true, the result will start at the beginning of the channel
+ * @param connector {object} needs to be provided in order to listen platform-wide without ssid
  * @returns {Promise<Observable<any>>}
  */
-const observe = async (ssid, claimFilter, historical = false) => {
+const observe = async (ssid, claimFilter, historical = false, connector = null) => {
+  if (connector != null && ssid == null) {
+    return observeAll(connector, claimFilter)
+  }
   if (ssid == null) {
-    throw Error('Observe without ssid is not supported')
+    throw Error('Observe without ssid or connector is not supported')
   }
 
   let expandedSsid = await expandSsid(ssid)
@@ -224,25 +228,31 @@ const observe = async (ssid, claimFilter, historical = false) => {
     for (let claim of claims) {
       observer.next(claim)
     }
-  })
-    .pipe(filter(claim => {
-      if (claimFilter != null) {
-        for (let predicate of Object.keys(claimFilter)) {
-          if (claim['claim']['data'][predicate] == null) {
-            // Predicate not present in claim
-            return false
-          }
+  }).pipe(filter(claim => {
+    if (claimFilter != null) {
+      for (let predicate of Object.keys(claimFilter)) {
+        if (claim['claim']['data'][predicate] == null) {
+          // Predicate not present in claim
+          return false
+        }
 
-          if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['claim']['data'][predicate]) {
-            // Object is provided in filter, but does not match with actual claim
-            return false
-          }
+        if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['claim']['data'][predicate]) {
+          // Object is provided in filter, but does not match with actual claim
+          return false
         }
       }
-      return true
-    }))
+    }
+    return true
+  }))
 
   return historyObservable.pipe(concat(currentObservable))
+}
+
+const observeAll = async (connector, claimFilter) => {
+  return (await connector.observe(null, claimFilter)).pipe(map(claim => {
+    claim['claim'].previous = getLink(null, claim['claim'].previous, connector.getName())
+    return claim
+  }))
 }
 
 /**

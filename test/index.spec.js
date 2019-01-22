@@ -113,6 +113,28 @@ describe('desciple-core-api', () => {
       })
     })
 
+    it('be able to observe platform-wide', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      let observable = await discipl.observe(null, {}, false, await discipl.getConnector('memory'))
+      let resultPromise = observable.pipe(take(1)).toPromise()
+      await discipl.claim(ssid, { 'need': 'wine' })
+
+      let result = await resultPromise
+
+      expect(result).to.deep.equal({
+        'claim': {
+          'data': {
+            'need': 'wine'
+          },
+          'previous': claimLink
+        },
+        'ssid': {
+          'pubkey': ssid.pubkey
+        }
+      })
+    })
+
     it('be able to observe historically', async () => {
       let ssid = await discipl.newSsid('memory')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
@@ -152,7 +174,7 @@ describe('desciple-core-api', () => {
         expect(false).to.equal(true)
       } catch (e) {
         expect(e).to.be.a('error')
-        expect(e.message).to.equal('Observe without ssid is not supported')
+        expect(e.message).to.equal('Observe without ssid or connector is not supported')
       }
     })
 
