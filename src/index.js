@@ -215,8 +215,7 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
 
     let current = await get(latestClaim)
     while (current != null) {
-      current['ssid'] = ssid
-      claims.unshift(current)
+      claims.unshift({ 'claim': current, 'ssid': { 'pubkey': ssid.pubkey } })
 
       if (current.previous) {
         current = await get(current.previous)
@@ -231,12 +230,12 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
   }).pipe(filter(claim => {
     if (claimFilter != null) {
       for (let predicate of Object.keys(claimFilter)) {
-        if (claim['data'][predicate] == null) {
+        if (claim['claim']['data'][predicate] == null) {
           // Predicate not present in claim
           return false
         }
 
-        if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['data'][predicate]) {
+        if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['claim']['data'][predicate]) {
           // Object is provided in filter, but does not match with actual claim
           return false
         }

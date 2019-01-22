@@ -151,20 +151,27 @@ describe('desciple-core-api', () => {
 
       expect(result).to.deep.equal([
         {
-          'data': {
-            'need': 'beer'
+          'claim': {
+            'data': {
+              'need': 'beer'
+            },
+            'previous': null
           },
-          'previous': null,
-          'ssid': ssid
+          'ssid': {
+            'pubkey': ssid.pubkey
+          }
         },
         {
-          'data': {
-            'need': 'wine'
+          'claim': {
+            'data': {
+              'need': 'wine'
+            },
+            'previous': claimLink
           },
-          'previous': claimLink,
-          'ssid': ssid
+          'ssid': {
+            'pubkey': ssid.pubkey
+          }
         }
-
       ])
     })
 
@@ -184,11 +191,15 @@ describe('desciple-core-api', () => {
 
       expect(result).to.deep.equal(
         {
-          'data': {
-            'need': 'wine'
+          'claim': {
+            'data': {
+              'need': 'wine'
+            },
+            'previous': claimLink
           },
-          'previous': claimLink,
-          'ssid': ssid
+          'ssid': {
+            'pubkey': ssid.pubkey
+          }
         }
       )
     })
@@ -209,11 +220,15 @@ describe('desciple-core-api', () => {
 
       expect(result).to.deep.equal(
         {
-          'data': {
-            'desire': 'wine'
+          'claim': {
+            'data': {
+              'desire': 'wine'
+            },
+            'previous': claimLink
           },
-          'previous': claimLink,
-          'ssid': ssid
+          'ssid': {
+            'pubkey': ssid.pubkey
+          }
         }
       )
     })
