@@ -1,4 +1,3 @@
-import crypto from 'crypto-js'
 import { loadConnector } from './connector-loader'
 import { Observable } from 'rxjs'
 import { filter, map, concat } from 'rxjs/operators'
@@ -54,16 +53,18 @@ const splitLink = (link) => {
 }
 
 /**
- * returns a link string for the given claim in the channel of the given ssid. claim can be a string in which case it needs to be a connector specific reference string, or it is a object holding claim(s) of which the hash of the stringified version is used as reference
+ * returns a link string for the given claim in the channel of the given ssid. claim is supposed to be a connector specific reference string
  */
-const getLink = (ssid, claim, connectorName = null) => {
-  if (claim) {
-    let connector = connectorName != null ? connectorName : ssid.connector.getName()
-    if (typeof claim === 'string') {
-      return LINK_PREFIX + connector + DID_DELIMITER + claim
-    } else {
-      return LINK_PREFIX + connector + DID_DELIMITER + getHash(ssid, claim)
-    }
+const getLink = (ssid, claim) => {
+  return asLink(ssid.connector, claim)
+}
+
+/**
+ * returns a link string for the given claim reference on the platform of the given connector name. returns null if the claim reference is null or not a string
+ */
+const asLink = (connector, claimReference) => {
+  if ((claimReference) && (typeof claimReference === 'string')) {
+    return LINK_PREFIX + connector.getName() + DID_DELIMITER + claimReference
   }
   return null
 }
@@ -89,13 +90,6 @@ const getSsidOfLinkedClaim = async (link) => {
   let conn = await getConnector(connector)
   let ssid = await conn.getSsidOfClaim(reference)
   return { 'did': DID_PREFIX + conn.getName() + DID_DELIMITER + ssid.pubkey }
-}
-
-/**
- * returns a HMAC-384 peppered hash of the given data with the did of the given ssid as key
- */
-const getHash = (ssid, data) => {
-  return crypto.enc.Base64.stringify(crypto.HmacSHA384(data, ssid.did))
 }
 
 const expandSsid = async (ssid) => {
@@ -176,7 +170,7 @@ const get = async (link, ssid = null) => {
   let { connector, reference } = splitLink(link)
   let conn = await getConnector(connector)
   let result = await conn.get(reference, ssid)
-  result.previous = getLink({ 'connector': conn }, result.previous)
+  result.previous = asLink(conn, result.previous)
   return result
 }
 
@@ -250,7 +244,7 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
 
 const observeAll = async (connector, claimFilter) => {
   return (await connector.observe(null, claimFilter)).pipe(map(claim => {
-    claim['claim'].previous = getLink(null, claim['claim'].previous, connector.getName())
+    claim['claim'].previous = asLink(connector, claim['claim'].previous)
     return claim
   }))
 }
