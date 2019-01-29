@@ -210,7 +210,7 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
 
     let current = await get(latestClaim)
     while (current != null) {
-      claims.unshift({ 'claim': current, 'ssid': { 'pubkey': ssid.pubkey } })
+      claims.unshift({ 'claim': current, 'ssid': { 'did': expandedSsid.did } })
 
       if (current.previous) {
         current = await get(current.previous)
