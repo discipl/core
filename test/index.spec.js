@@ -317,7 +317,7 @@ describe('desciple-core-api', () => {
 
       expect(claimlink).to.equal('link:discipl:mock:claimRef')
     })
-
+    /*
     it('should be able to add a claim to some new channel through a claim() method with an object as reference', async () => {
       let ssid = { did: 'did:discipl:mock:111' }
       let claimStub = sinon.stub().returns({ someKey: 'infoNeededByConnector' })
@@ -332,7 +332,7 @@ describe('desciple-core-api', () => {
 
       expect(claimlink).to.equal('link:discipl:mock:jdkIBFi8PojrrOV/Z9qtuS+8hDyUUMUkono9Rof4ZxlA6OIQjOWcHeSWGD73fn2I')
     })
-
+*/
     it('should be able to get a claim added through claims', async () => {
       let claimlink = 'link:discipl:mock:claimRef'
       let prevClaimlink = 'link:discipl:mock:previous'
