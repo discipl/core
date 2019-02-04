@@ -1,8 +1,10 @@
+<img align="left" width="100" height="100" style="margin: 25px 25px 5px 5px" src="discipl.svg">
 
 ## Discipl Core
 
 [![Build Status](https://travis-ci.org/discipl/core.svg?branch=master)](https://travis-ci.org/discipl/core)
 
+<br/>
 Discipl focuses on an evolved society in a needs based economy (a network economy of abundance / resource based economy) and tries to progress society to this by underpinning
 society with a DIstributed Collaborative Information PLatform. Needs (both demand and supply) are expressed anonymously by entities (people and things) and taken
 care of automaticly and for free as much as possible following law, regulations and policies, which contain the previously established solutions for conflicting needs. Conflicts are taken
