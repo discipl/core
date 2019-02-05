@@ -6,36 +6,33 @@ import sinon from 'sinon'
 import { take, toArray } from 'rxjs/operators'
 
 describe('desciple-core-api', () => {
-  describe('The disciple core API with memory connector', () => {
+  describe('The disciple core API with ephemeral connector', () => {
     it('should be able to get the connector asynchronously', async () => {
-      const connector = await discipl.getConnector('memory')
-      expect(connector.getName()).to.equal('memory')
+      const connector = await discipl.getConnector('ephemeral')
+      expect(connector.getName()).to.equal('ephemeral')
 
-      expect(connector.getName(), 'when loaded for the second time').to.equal('memory')
+      expect(connector.getName(), 'when loaded for the second time').to.equal('ephemeral')
     })
 
     it('should be able to retrieve a new ssid asynchronously', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
 
       expect(ssid.pubkey).to.be.a('string')
-      expect(ssid.pubkey.length).to.equal(88)
       expect(ssid.privkey).to.be.a('string')
-      expect(ssid.privkey.length).to.equal(88)
       expect(ssid.pubkey).to.not.equal(ssid.privkey)
-      expect(ssid.did).to.equal('did:discipl:memory:' + ssid.pubkey)
-      expect(ssid.connector.getName()).to.equal('memory')
+      expect(ssid.did).to.equal('did:discipl:ephemeral:' + ssid.pubkey)
+      expect(ssid.connector.getName()).to.equal('ephemeral')
     })
 
     it('should be able to add a first claim to some new channel through a claim() method', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimlink = await discipl.claim(ssid, { 'need': 'beer' })
 
       expect(claimlink).to.be.a('string')
-      expect(claimlink.length).to.equal(108)
     })
 
     it('should be able to get a claim added through claim, with link to previous', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimlink1 = await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
@@ -45,11 +42,11 @@ describe('desciple-core-api', () => {
     })
 
     it('should be able to attest to a second claim in a chain', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
-      let attestorSsid = await discipl.newSsid('memory')
+      let attestorSsid = await discipl.newSsid('ephemeral')
 
       let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
 
@@ -60,26 +57,26 @@ describe('desciple-core-api', () => {
     })
 
     it('should be able to verify an attestation', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
-      let attestorSsid = await discipl.newSsid('memory')
+      let attestorSsid = await discipl.newSsid('ephemeral')
 
       await discipl.attest(attestorSsid, 'agree', claimlink2)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, { 'did': 'did:discipl:memory:1234' }, attestorSsid])
+      let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, { 'did': 'did:discipl:ephemeral:1234' }, attestorSsid])
 
       // The first ssid that is valid and proves the attestation should be returned
       expect(verifiedAttestor).to.equal(attestorSsid)
     })
 
     it('should be able to not verify an attestation of a revoked claim', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
-      let attestorSsid = await discipl.newSsid('memory')
+      let attestorSsid = await discipl.newSsid('ephemeral')
 
       await discipl.attest(attestorSsid, 'agree', claimlink2)
       await discipl.revoke(ssid, claimlink2)
@@ -92,7 +89,7 @@ describe('desciple-core-api', () => {
     })
 
     it('be able to observe', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observable = await discipl.observe(ssid)
       let resultPromise = observable.pipe(take(1)).toPromise()
@@ -114,9 +111,9 @@ describe('desciple-core-api', () => {
     })
 
     it('be able to observe platform-wide', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(null, {}, false, await discipl.getConnector('memory'))
+      let observable = await discipl.observe(null, {}, false, await discipl.getConnector('ephemeral'))
       let resultPromise = observable.pipe(take(1)).toPromise()
       await discipl.claim(ssid, { 'need': 'wine' })
 
@@ -136,7 +133,7 @@ describe('desciple-core-api', () => {
     })
 
     it('be able to observe historically', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observable = await discipl.observe(ssid, null, true)
 
@@ -176,7 +173,7 @@ describe('desciple-core-api', () => {
     })
 
     it('be able to observe historically with a filter', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'need': 'tea' })
@@ -205,7 +202,7 @@ describe('desciple-core-api', () => {
     })
 
     it('be able to observe historically with a filter on the predicate', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'desire': 'wine' })
       await discipl.claim(ssid, { 'need': 'wine' })
@@ -244,11 +241,11 @@ describe('desciple-core-api', () => {
     })
 
     it('should be able to export linked verifiable claim channels given a ssid', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
-      let attestorSsid = await discipl.newSsid('memory')
+      let attestorSsid = await discipl.newSsid('ephemeral')
 
       let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
       let exportedData = await discipl.exportLD(attestorSsid)
@@ -257,11 +254,11 @@ describe('desciple-core-api', () => {
     })
 
     it('should be able to export linked verifiable claim channels given a did', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
-      let attestorSsid = await discipl.newSsid('memory')
+      let attestorSsid = await discipl.newSsid('ephemeral')
 
       let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
       let exportedData = await discipl.exportLD(attestorSsid.did)
@@ -270,11 +267,11 @@ describe('desciple-core-api', () => {
     })
 
     it('should be able to export multiple (linked) verifiable claims in a channel in order', async () => {
-      let ssid = await discipl.newSsid('memory')
+      let ssid = await discipl.newSsid('ephemeral')
       let claimlink1 = await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
-      let ssid2 = await discipl.newSsid('memory')
+      let ssid2 = await discipl.newSsid('ephemeral')
       let claimlink3 = await discipl.claim(ssid2, { 'need': 'water' })
 
       let attestationLink = await discipl.attest(ssid, 'agree', claimlink3)
