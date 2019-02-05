@@ -284,6 +284,38 @@ describe('desciple-core-api', () => {
       expect(exportedData[ssid.did][1]).to.deep.equal({ [claimlink2]: { 'need': 'wine' } })
       expect(exportedData[ssid.did][2]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid2.did]: [ { [claimlink3]: { 'need': 'water' } } ] } } })
     })
+
+    it('should be able to import multiple verifiable claims in multiple channels in order (in memory connector)', async () => {
+      let ssid = await discipl.newSsid('memory')
+      let ssid2 = await discipl.newSsid('memory')
+
+      // note that the memory connector is for testing the core api only. It expects the private key as signature
+      // which of course is not the way to do things. The ephemeral connector implements using signatures in a proper way
+      let linkWithSignature = ssid.privkey
+      let linkWithSignature2 = ssid2.privkey
+      let result = await discipl.importLD({
+        [ssid.did]: [
+          { [linkWithSignature]: { 'need': 'food' } },
+          { [linkWithSignature]: { 'match': 'link' } },
+          { [linkWithSignature]: { 'allow': 'some' } }
+        ],
+        [ssid2.did]: [
+          { [linkWithSignature2]: { 'require': 'drink' } },
+          { [linkWithSignature2]: { 'solved': 'problem' } },
+          { [linkWithSignature2]: { 'attendTo': 'wishes' } }
+        ]
+      })
+      expect(result).to.equal(true)
+
+      let channelData = await discipl.exportLD(ssid)
+      expect(channelData[ssid.did][0][Object.keys(channelData[ssid.did][0])]).to.deep.equal({ 'need': 'food' })
+      expect(channelData[ssid.did][1][Object.keys(channelData[ssid.did][1])]).to.deep.equal({ 'match': 'link' })
+      expect(channelData[ssid.did][2][Object.keys(channelData[ssid.did][2])]).to.deep.equal({ 'allow': 'some' })
+      let channelData2 = await discipl.exportLD(ssid2)
+      expect(channelData2[ssid2.did][0][Object.keys(channelData2[ssid2.did][0])]).to.deep.equal({ 'require': 'drink' })
+      expect(channelData2[ssid2.did][1][Object.keys(channelData2[ssid2.did][1])]).to.deep.equal({ 'solved': 'problem' })
+      expect(channelData2[ssid2.did][2][Object.keys(channelData2[ssid2.did][2])]).to.deep.equal({ 'attendTo': 'wishes' })
+    })
   },
   describe('The disciple core API with mocked connector', () => {
     it('should be able to retrieve a new mocked ssid asynchronously', async () => {

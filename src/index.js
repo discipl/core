@@ -336,6 +336,23 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
 }
 
 /**
+ * Imports claims given a dataset as returned by exportLD. Claims linked in the claims are not imported (so max depth = 1)
+ * Not all connectors will support this method and its functioning may be platform specific. Some may actually let you
+ * create claims in bulk through this import. Others will only check for existence and validate.
+ */
+const importLD = async (data) => {
+  for (let did in data) {
+    let ssid = { did: did }
+    await expandSsid(ssid)
+    for (let link in data[did]) {
+      let result = await ssid.connector.import(ssid, Object.keys(data[did][link])[0], data[did][link][Object.keys(data[did][link])[0]])
+      if (result == null) { return null }
+    }
+  }
+  return true
+}
+
+/**
  * Adds a revocation attestation to the channel of the given ssid. Effectively revokes the claim the given link refers to. Subsequent verification of the claim will not succeed.
  * @param {json} ssid - The ssid json object. The attestation is added to the channel of this ssid
  * @param {string} link - The link to the claim (or attestation) that should be attested as being revoked. Note that this claim must be in the channel of the given ssid to be effectively seen as revoked.
@@ -353,6 +370,7 @@ export {
   verify,
   get,
   exportLD,
+  importLD,
   revoke,
   observe,
   MAX_DEPTH_REACHED
