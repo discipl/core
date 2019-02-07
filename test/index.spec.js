@@ -1,6 +1,7 @@
 /* eslint-env mocha */
 import { expect } from 'chai'
 import * as discipl from '../src/index.js'
+import { loadConnector } from '../src/connector-loader.js'
 
 import sinon from 'sinon'
 import { take, toArray } from 'rxjs/operators'
@@ -280,6 +281,36 @@ describe('desciple-core-api', () => {
       expect(exportedData[ssid.did][0]).to.deep.equal({ [claimlink1]: { 'need': 'beer' } })
       expect(exportedData[ssid.did][1]).to.deep.equal({ [claimlink2]: { 'need': 'wine' } })
       expect(exportedData[ssid.did][2]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid2.did]: [ { [claimlink3]: { 'need': 'water' } } ] } } })
+    })
+
+    it('should be able to import multiple verifiable claims in multiple channels in order (in ephemeral connector)', async () => {
+      let ssid = await discipl.newSsid('ephemeral')
+      let ssid2 = await discipl.newSsid('ephemeral')
+
+      await discipl.claim(ssid, { 'need': 'food' })
+      await discipl.claim(ssid, { 'match': 'link' })
+      await discipl.claim(ssid, { 'allow': 'some' })
+      await discipl.claim(ssid2, { 'require': 'drink' })
+      await discipl.claim(ssid2, { 'solved': 'problem' })
+      await discipl.claim(ssid2, { 'attendTo': 'wishes' })
+      let ld = await discipl.exportLD(ssid)
+      let ld2 = await discipl.exportLD(ssid2)
+
+      // reset ephemeral connector (in memory mode)
+      let ConnectorModuleClass = await loadConnector('ephemeral')
+      discipl.registerConnector('ephemeral', new ConnectorModuleClass())
+
+      let result = await discipl.importLD({ ...ld, ...ld2 })
+      expect(result).to.equal(true)
+
+      let channelData = await discipl.exportLD(ssid)
+      expect(channelData[ssid.did][0][Object.keys(channelData[ssid.did][0])]).to.deep.equal({ 'need': 'food' })
+      expect(channelData[ssid.did][1][Object.keys(channelData[ssid.did][1])]).to.deep.equal({ 'match': 'link' })
+      expect(channelData[ssid.did][2][Object.keys(channelData[ssid.did][2])]).to.deep.equal({ 'allow': 'some' })
+      let channelData2 = await discipl.exportLD(ssid2)
+      expect(channelData2[ssid2.did][0][Object.keys(channelData2[ssid2.did][0])]).to.deep.equal({ 'require': 'drink' })
+      expect(channelData2[ssid2.did][1][Object.keys(channelData2[ssid2.did][1])]).to.deep.equal({ 'solved': 'problem' })
+      expect(channelData2[ssid2.did][2][Object.keys(channelData2[ssid2.did][2])]).to.deep.equal({ 'attendTo': 'wishes' })
     })
   },
   describe('The disciple core API with mocked connector', () => {

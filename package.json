@@ -23,7 +23,7 @@
     "babel-plugin-dynamic-import-node": "^2.2.0",
     "chai": "^4.2.0",
     "codecov": "^3.1.0",
-    "discipl-core-ephemeral": "git+https://github.com/discipl/discipl-core-ephemeral.git#feature/in-memory-server",
+    "discipl-core-ephemeral": "git+https://github.com/discipl/discipl-core-ephemeral.git#issue10-import-method",
     "mocha": "^5.2.0",
     "nyc": "^13.2.0",
     "sinon": "^7.2.3",
