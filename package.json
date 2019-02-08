@@ -1,13 +1,22 @@
 {
-  "name": "discipl-core",
+  "name": "@discipl/core",
   "version": "0.4.0",
   "description": "Discipl Core API",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "module": "src/index.js",
   "repository": "https://github.com/discipl/core",
   "author": "Bas Kaptijn",
   "license": "GPL-3.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/src",
+    "/dist"
+  ],
   "scripts": {
-    "test": "nyc --reporter=html --reporter=text ./node_modules/.bin/mocha --require ./test/babel-register-helper.js ./test/**/*.spec.js",
+    "build": "babel src/ --out-dir dist",
+    "test": "nyc --reporter=html --reporter=text ./node_modules/.bin/mocha --require @babel/register ./test/**/*.spec.js",
     "lint": "./node_modules/standard/bin/cmd.js --parser babel-eslint",
     "lint-fix": "./node_modules/standard/bin/cmd.js --parser babel-eslint --fix",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov && ./node_modules/codecov/bin/codecov"
@@ -16,6 +25,7 @@
     "rxjs": "^6.4.0"
   },
   "devDependencies": {
+    "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.3.1",
     "@babel/register": "^7.0.0",
@@ -23,7 +33,7 @@
     "babel-plugin-dynamic-import-node": "^2.2.0",
     "chai": "^4.2.0",
     "codecov": "^3.1.0",
-    "discipl-core-ephemeral": "git+https://github.com/discipl/discipl-core-ephemeral.git",
+    "@discipl/core-ephemeral": "file:/home/potte/packages/discipl-core-ephemeral-0.0.1.tgz",
     "mocha": "^5.2.0",
     "nyc": "^13.2.0",
     "sinon": "^7.2.3",
