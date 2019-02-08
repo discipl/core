@@ -33,7 +33,7 @@
     "babel-plugin-dynamic-import-node": "^2.2.0",
     "chai": "^4.2.0",
     "codecov": "^3.1.0",
-    "@discipl/core-ephemeral": "file:/home/potte/packages/discipl-core-ephemeral-0.0.1.tgz",
+    "@discipl/core-ephemeral": "~0.1.0",
     "mocha": "^5.2.0",
     "nyc": "^13.2.0",
     "sinon": "^7.2.3",
