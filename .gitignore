@@ -59,3 +59,5 @@ typings/
 
 # coverage
 coverage.lcov
+
+dist

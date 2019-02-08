@@ -1,4 +1,4 @@
-const CONNECTOR_MODULE_PREFIX = 'discipl-core-'
+const CONNECTOR_MODULE_PREFIX = '@discipl/core-'
 
 /**
  * loads a connector based on module name using a dynamic import

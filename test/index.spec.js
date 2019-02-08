@@ -6,7 +6,7 @@ import { loadConnector } from '../src/connector-loader.js'
 import sinon from 'sinon'
 import { take, toArray } from 'rxjs/operators'
 
-describe('desciple-core-api', () => {
+describe('discipl-core', () => {
   describe('The disciple core API with ephemeral connector', () => {
     it('should be able to get the connector asynchronously', async () => {
       const connector = await discipl.getConnector('ephemeral')
