@@ -312,6 +312,32 @@ describe('discipl-core', () => {
       expect(channelData2[ssid2.did][1][Object.keys(channelData2[ssid2.did][1])]).to.deep.equal({ 'solved': 'problem' })
       expect(channelData2[ssid2.did][2][Object.keys(channelData2[ssid2.did][2])]).to.deep.equal({ 'attendTo': 'wishes' })
     })
+
+    it('should be able to import attested (linked) claims in multiple channels (in ephemeral connector)', async () => {
+      let ssid = await discipl.newSsid('ephemeral')
+      let ssid2 = await discipl.newSsid('ephemeral')
+      let ssid3 = await discipl.newSsid('ephemeral')
+
+      let link = await discipl.claim(ssid, { 'need': 'food' })
+      let link2 = await discipl.claim(ssid2, { 'match': link })
+      let link3 = await discipl.claim(ssid3, { 'solved': link2 })
+
+      let ld = await discipl.exportLD(link3)
+
+      // reset ephemeral connector (in memory mode)
+      let ConnectorModuleClass = await loadConnector('ephemeral')
+      discipl.registerConnector('ephemeral', new ConnectorModuleClass())
+
+      let result = await discipl.importLD(ld)
+      expect(result).to.equal(true)
+
+      let channelData = await discipl.exportLD(ssid.did)
+      expect(channelData[ssid.did][0][Object.keys(channelData[ssid.did][0])]).to.deep.equal({ 'need': 'food' })
+      let channelData2 = await discipl.exportLD(ssid2)
+      expect(channelData2[ssid2.did][0][Object.keys(channelData2[ssid2.did][0])]).to.deep.equal({ 'match': { [ssid.did]: [{ [link]: { 'need': 'food' } }] } })
+      let channelData3 = await discipl.exportLD(link3)
+      expect(channelData3[ssid3.did][0][Object.keys(channelData3[ssid3.did][0])]).to.deep.equal({ 'solved': { [ssid2.did]: [{ [link2]: { 'match': { [ssid.did]: [{ [link]: { 'need': 'food' } }] } } }] } })
+    })
   },
   describe('The disciple core API with mocked connector', () => {
     it('should be able to retrieve a new mocked ssid asynchronously', async () => {

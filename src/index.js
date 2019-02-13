@@ -307,7 +307,6 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
   let channelData = []
 
   let res = await get(currentLink, ssid)
-
   if (res != null) {
     let data = res.data
 
@@ -341,17 +340,35 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
  * create claims in bulk through this import. Others will only check for existence and validate.
  */
 const importLD = async (data) => {
+  let succeeded = null
   for (let did in data) {
+    if (did.indexOf(DID_PREFIX) !== 0) {
+      continue
+    }
     let ssid = { did: did }
     await expandSsid(ssid)
     for (let i in data[did]) {
       let link = Object.keys(data[did][i])[0]
+      let claim = data[did][i][link]
+      let predicate = Object.keys(claim)[0]
+      try {
+        let res = await importLD(claim[predicate])
+        if (res != null) {
+          let nestedDid = Object.keys(claim[predicate])[0]
+          let l = Object.keys(claim[predicate][nestedDid][0])[0]
+          claim = { [predicate]: l }
+        }
+      } catch { }
       let splittedLink = splitLink(link)
-      let result = await ssid.connector.import(ssid, splittedLink.reference, data[did][i][link])
-      if (result == null) { return null }
+      let result = await ssid.connector.import(ssid, splittedLink.reference, claim)
+      if (result == null) {
+        return null
+      } else {
+        succeeded = true
+      }
     }
   }
-  return true
+  return succeeded
 }
 
 /**
