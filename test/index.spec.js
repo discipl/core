@@ -283,6 +283,18 @@ describe('discipl-core', () => {
       expect(exportedData[ssid.did][2]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid2.did]: [ { [claimlink3]: { 'need': 'water' } } ] } } })
     })
 
+    it('should be able to export more complex json objects as data', async () => {
+      let ssid = await discipl.newSsid('ephemeral')
+      let claimlink1 = await discipl.claim(ssid, { 'need': 'wine' })
+      let claimlink2 = await discipl.claim(ssid, [{ 'need': 'beer' }, claimlink1])
+
+      let ssid2 = await discipl.newSsid('ephemeral')
+      let attestationLink = await discipl.attest(ssid2, 'agree', claimlink2)
+      let exportedData = await discipl.exportLD(ssid2)
+
+      expect(exportedData[ssid2.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: [{ 'need': 'beer' }, { [ssid.did]: [ { [claimlink1]: { 'need': 'wine' } } ] }] } ] } } })
+    })
+
     it('should be able to import multiple verifiable claims in multiple channels in order (in ephemeral connector)', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let ssid2 = await discipl.newSsid('ephemeral')

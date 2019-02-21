@@ -316,16 +316,26 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
     }
 
     let linkData = {}
+    if (Array.isArray(data)) {
+      linkData = []
+    }
+
     for (let elem in data) {
       if (data.hasOwnProperty(elem)) {
         let value = data[elem]
+        let exportValue = await exportLD(value, maxdepth, ssid, visitedStack)
         try {
-          linkData[elem] = await exportLD(value, maxdepth, ssid, visitedStack)
+          if (Array.isArray(data)) {
+            linkData.push(exportValue)
+          } else {
+            linkData[elem] = exportValue
+          }
         } catch (err) {
           linkData[elem] = { [value]: { 'export-error': err } }
         }
       }
     }
+
     channelData.push({ [currentLink]: linkData })
   } else {
     channelData.push({ [currentLink]: 'NOT_FOUND' })
