@@ -90,7 +90,7 @@ describe('discipl-core', () => {
     it('be able to observe', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(ssid)
+      let observable = await discipl.observe(ssid.did)
       let resultPromise = observable.pipe(take(1)).toPromise()
       await discipl.claim(ssid, { 'need': 'wine' })
 
@@ -130,7 +130,7 @@ describe('discipl-core', () => {
     it('be able to observe historically', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(ssid, null, true)
+      let observable = await discipl.observe(ssid.did, null, true)
 
       await discipl.claim(ssid, { 'need': 'wine' })
       let resultPromise = observable.pipe(take(2)).pipe(toArray()).toPromise()
@@ -164,7 +164,7 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'need': 'tea' })
-      let observable = await discipl.observe(ssid, { 'need': 'wine' }, true)
+      let observable = await discipl.observe(ssid.did, { 'need': 'wine' }, true)
 
       let resultPromise = observable.pipe(take(1)).toPromise()
 
@@ -188,7 +188,7 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'desire': 'wine' })
       await discipl.claim(ssid, { 'need': 'wine' })
-      let observable = await discipl.observe(ssid, { 'desire': null }, true)
+      let observable = await discipl.observe(ssid.did, { 'desire': null }, true)
 
       let resultPromise = observable.pipe(take(1)).toPromise()
 
@@ -213,7 +213,7 @@ describe('discipl-core', () => {
         expect(false).to.equal(true)
       } catch (e) {
         expect(e).to.be.a('error')
-        expect(e.message).to.equal('Observe without ssid or connector is not supported')
+        expect(e.message).to.equal('Observe without did or connector is not supported')
       }
     })
 

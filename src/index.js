@@ -129,23 +129,23 @@ const get = async (link, ssid = null) => {
 /**
  * Subscribes a given callback function to be called when new claims are found with given parameters.
  *
- * @param ssid {object} ssid to filter claims
+ * @param did {string} did to filter claims
  * @param claimFilter {object} filters by the content of claims
  * @param historical {boolean} if true, the result will start at the beginning of the channel
  * @param connector {object} needs to be provided in order to listen platform-wide without ssid
  * @returns {Promise<Observable<any>>}
  */
-const observe = async (ssid, claimFilter, historical = false, connector = null) => {
-  if (connector != null && ssid == null) {
+const observe = async (did, claimFilter, historical = false, connector = null) => {
+  if (connector != null && did == null) {
     return observeAll(connector, claimFilter)
   }
-  if (ssid == null) {
-    throw Error('Observe without ssid or connector is not supported')
+  if (did == null) {
+    throw Error('Observe without did or connector is not supported')
   }
 
-  let connectorName = BaseConnector.getConnectorName(ssid.did)
+  let connectorName = BaseConnector.getConnectorName(did)
   connector = await getConnector(connectorName)
-  let currentObservable = (await connector.observe(ssid.did, claimFilter))
+  let currentObservable = (await connector.observe(did, claimFilter))
     .pipe(map(claim => {
       return claim
     }))
@@ -155,13 +155,13 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
   }
 
   let historyObservable = Observable.create(async (observer) => {
-    let latestClaim = await connector.getLatestClaim(ssid.did)
+    let latestClaim = await connector.getLatestClaim(did)
 
     let claims = []
 
     let current = await get(latestClaim)
     while (current != null) {
-      claims.unshift({ 'claim': current, 'did': ssid.did })
+      claims.unshift({ 'claim': current, 'did': did })
 
       if (current.previous) {
         current = await get(current.previous)
