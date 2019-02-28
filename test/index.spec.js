@@ -18,11 +18,9 @@ describe('discipl-core', () => {
     it('should be able to retrieve a new ssid asynchronously', async () => {
       let ssid = await discipl.newSsid('ephemeral')
 
-      expect(ssid.pubkey).to.be.a('string')
       expect(ssid.privkey).to.be.a('string')
-      expect(ssid.pubkey).to.not.equal(ssid.privkey)
-      expect(ssid.did).to.equal('did:discipl:ephemeral:' + ssid.pubkey)
-      expect(ssid.connector.getName()).to.equal('ephemeral')
+      expect(ssid.did).to.be.a('string')
+      expect(ssid.did.startsWith('did:discipl:ephemeral:')).to.equal(true)
     })
 
     it('should be able to add a first claim to some new channel through a claim() method', async () => {
@@ -66,10 +64,10 @@ describe('discipl-core', () => {
 
       await discipl.attest(attestorSsid, 'agree', claimlink2)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, null, { 'did': 'did:discipl:ephemeral:1234' }, attestorSsid])
+      let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, ssid.did, null, 'did:discipl:ephemeral:1234', attestorSsid.did])
 
       // The first ssid that is valid and proves the attestation should be returned
-      expect(verifiedAttestor).to.equal(attestorSsid)
+      expect(verifiedAttestor).to.equal(attestorSsid.did)
     })
 
     it('should be able to not verify an attestation of a revoked claim', async () => {
@@ -105,9 +103,7 @@ describe('discipl-core', () => {
           },
           'previous': claimLink
         },
-        'ssid': {
-          'did': ssid.did
-        }
+        'did': ssid.did
       })
     })
 
@@ -127,9 +123,7 @@ describe('discipl-core', () => {
           },
           'previous': claimLink
         },
-        'ssid': {
-          'did': ssid.did
-        }
+        'did': ssid.did
       })
     })
 
@@ -143,10 +137,6 @@ describe('discipl-core', () => {
 
       let result = await resultPromise
 
-      // Delete the connectors to prevent circular references from messing up testing
-      delete result[0].ssid.connector
-      delete result[1].ssid.connector
-
       expect(result).to.deep.equal([
         {
           'claim': {
@@ -155,9 +145,7 @@ describe('discipl-core', () => {
             },
             'previous': null
           },
-          'ssid': {
-            'did': ssid.did
-          }
+          'did': ssid.did
         },
         {
           'claim': {
@@ -166,9 +154,7 @@ describe('discipl-core', () => {
             },
             'previous': claimLink
           },
-          'ssid': {
-            'did': ssid.did
-          }
+          'did': ssid.did
         }
       ])
     })
@@ -184,9 +170,6 @@ describe('discipl-core', () => {
 
       let result = await resultPromise
 
-      // Delete the connectors to prevent circular references from messing up testing
-      delete result.ssid.connector
-
       expect(result).to.deep.equal(
         {
           'claim': {
@@ -195,9 +178,7 @@ describe('discipl-core', () => {
             },
             'previous': claimLink
           },
-          'ssid': {
-            'did': ssid.did
-          }
+          'did': ssid.did
         }
       )
     })
@@ -213,9 +194,6 @@ describe('discipl-core', () => {
 
       let result = await resultPromise
 
-      // Delete the connectors to prevent circular references from messing up testing
-      delete result.ssid.connector
-
       expect(result).to.deep.equal(
         {
           'claim': {
@@ -224,9 +202,7 @@ describe('discipl-core', () => {
             },
             'previous': claimLink
           },
-          'ssid': {
-            'did': ssid.did
-          }
+          'did': ssid.did
         }
       )
     })
@@ -239,19 +215,6 @@ describe('discipl-core', () => {
         expect(e).to.be.a('error')
         expect(e.message).to.equal('Observe without ssid or connector is not supported')
       }
-    })
-
-    it('should be able to export linked verifiable claim channels given a ssid', async () => {
-      let ssid = await discipl.newSsid('ephemeral')
-      await discipl.claim(ssid, { 'need': 'beer' })
-      let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
-
-      let attestorSsid = await discipl.newSsid('ephemeral')
-
-      let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
-      let exportedData = await discipl.exportLD(attestorSsid)
-
-      expect(exportedData[attestorSsid.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: { 'need': 'wine' } } ] } } })
     })
 
     it('should be able to export linked verifiable claim channels given a did', async () => {
@@ -276,7 +239,7 @@ describe('discipl-core', () => {
       let claimlink3 = await discipl.claim(ssid2, { 'need': 'water' })
 
       let attestationLink = await discipl.attest(ssid, 'agree', claimlink3)
-      let exportedData = await discipl.exportLD(ssid)
+      let exportedData = await discipl.exportLD(ssid.did)
 
       expect(exportedData[ssid.did][0]).to.deep.equal({ [claimlink1]: { 'need': 'beer' } })
       expect(exportedData[ssid.did][1]).to.deep.equal({ [claimlink2]: { 'need': 'wine' } })
@@ -290,7 +253,7 @@ describe('discipl-core', () => {
 
       let ssid2 = await discipl.newSsid('ephemeral')
       let attestationLink = await discipl.attest(ssid2, 'agree', claimlink2)
-      let exportedData = await discipl.exportLD(ssid2)
+      let exportedData = await discipl.exportLD(ssid2.did)
 
       expect(exportedData[ssid2.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: [{ 'need': 'beer' }, { [ssid.did]: [ { [claimlink1]: { 'need': 'wine' } } ] }] } ] } } })
     })
@@ -305,8 +268,8 @@ describe('discipl-core', () => {
       await discipl.claim(ssid2, { 'require': 'drink' })
       await discipl.claim(ssid2, { 'solved': 'problem' })
       await discipl.claim(ssid2, { 'attendTo': 'wishes' })
-      let ld = await discipl.exportLD(ssid)
-      let ld2 = await discipl.exportLD(ssid2)
+      let ld = await discipl.exportLD(ssid.did)
+      let ld2 = await discipl.exportLD(ssid2.did)
 
       // reset ephemeral connector (in memory mode)
       let ConnectorModuleClass = await loadConnector('ephemeral')
@@ -315,11 +278,11 @@ describe('discipl-core', () => {
       let result = await discipl.importLD({ ...ld, ...ld2 })
       expect(result).to.equal(true)
 
-      let channelData = await discipl.exportLD(ssid)
+      let channelData = await discipl.exportLD(ssid.did)
       expect(channelData[ssid.did][0][Object.keys(channelData[ssid.did][0])]).to.deep.equal({ 'need': 'food' })
       expect(channelData[ssid.did][1][Object.keys(channelData[ssid.did][1])]).to.deep.equal({ 'match': 'link' })
       expect(channelData[ssid.did][2][Object.keys(channelData[ssid.did][2])]).to.deep.equal({ 'allow': 'some' })
-      let channelData2 = await discipl.exportLD(ssid2)
+      let channelData2 = await discipl.exportLD(ssid2.did)
       expect(channelData2[ssid2.did][0][Object.keys(channelData2[ssid2.did][0])]).to.deep.equal({ 'require': 'drink' })
       expect(channelData2[ssid2.did][1][Object.keys(channelData2[ssid2.did][1])]).to.deep.equal({ 'solved': 'problem' })
       expect(channelData2[ssid2.did][2][Object.keys(channelData2[ssid2.did][2])]).to.deep.equal({ 'attendTo': 'wishes' })
@@ -345,7 +308,7 @@ describe('discipl-core', () => {
 
       let channelData = await discipl.exportLD(ssid.did)
       expect(channelData[ssid.did][0][Object.keys(channelData[ssid.did][0])]).to.deep.equal({ 'need': 'food' })
-      let channelData2 = await discipl.exportLD(ssid2)
+      let channelData2 = await discipl.exportLD(ssid2.did)
       expect(channelData2[ssid2.did][0][Object.keys(channelData2[ssid2.did][0])]).to.deep.equal({ 'match': { [ssid.did]: [{ [link]: { 'need': 'food' } }] } })
       let channelData3 = await discipl.exportLD(link3)
       expect(channelData3[ssid3.did][0][Object.keys(channelData3[ssid3.did][0])]).to.deep.equal({ 'solved': { [ssid2.did]: [{ [link2]: { 'match': { [ssid.did]: [{ [link]: { 'need': 'food' } }] } } }] } })
@@ -353,33 +316,28 @@ describe('discipl-core', () => {
   },
   describe('The disciple core API with mocked connector', () => {
     it('should be able to retrieve a new mocked ssid asynchronously', async () => {
-      let newSsidStub = sinon.stub().returns({ pubkey: ''.padStart(88, '1'), privkey: ''.padStart(88, '2') })
-      let getNameStub = sinon.stub().returns('mock')
-      let stubConnector = { newSsid: newSsidStub, getName: getNameStub }
+      let newIdentityStub = sinon.stub().returns({ did: ''.padStart(88, '1'), privkey: ''.padStart(88, '2') })
+      let stubConnector = { newIdentity: newIdentityStub }
 
       await discipl.registerConnector('mock', stubConnector)
       let ssid = await discipl.newSsid('mock')
 
-      expect(newSsidStub.calledOnce).to.equal(true)
-      expect(getNameStub.calledOnce).to.equal(true)
-
-      expect(ssid.pubkey).to.equal(''.padStart(88, '1'))
+      expect(newIdentityStub.calledOnce).to.equal(true)
       expect(ssid.privkey).to.equal(''.padStart(88, '2'))
-      expect(ssid.did).to.equal('did:discipl:mock:' + ''.padStart(88, '1'))
-      expect(ssid.connector.getName()).to.equal('mock')
+      expect(ssid.did).to.equal(''.padStart(88, '1'))
     })
 
     it('should be able to add a claim to some new channel through a claim() method through a mocked connector', async () => {
-      let ssid = { did: 'did:discipl:mock:111' }
-      let claimStub = sinon.stub().returns('claimRef')
-      let getNameStub = sinon.stub().returns('mock')
-      let stubConnector = { claim: claimStub, getName: getNameStub }
+      let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
+
+      let stubConnector = { claim: claimStub }
 
       await discipl.registerConnector('mock', stubConnector)
       let claimlink = await discipl.claim(ssid, { 'need': 'beer' })
 
-      expect(claimStub.calledOnceWith({ did: 'did:discipl:mock:111', connector: stubConnector, pubkey: '111' }, { 'need': 'beer' })).to.equal(true)
-      expect(getNameStub.calledOnce).to.equal(true)
+      expect(claimStub.callCount).to.equal(1)
+      expect(claimStub.calledOnceWith('did:discipl:mock:111', 'SECRET_KEY', { 'need': 'beer' })).to.equal(true)
 
       expect(claimlink).to.equal('link:discipl:mock:claimRef')
     })
@@ -403,16 +361,14 @@ describe('discipl-core', () => {
       let claimlink = 'link:discipl:mock:claimRef'
       let prevClaimlink = 'link:discipl:mock:previous'
 
-      let getStub = sinon.stub().returns({ 'data': { 'need': 'wine' }, 'previous': 'previous' })
-      let getNameStub = sinon.stub().returns('mock')
+      let getStub = sinon.stub().returns({ 'data': { 'need': 'wine' }, 'previous': prevClaimlink })
 
-      let stubConnector = { get: getStub, getName: getNameStub }
+      let stubConnector = { get: getStub }
       await discipl.registerConnector('mock', stubConnector)
 
       let claim = await discipl.get(claimlink)
 
-      expect(getStub.calledOnceWith('claimRef', null)).to.equal(true)
-      expect(getNameStub.calledOnce).to.equal(true)
+      expect(getStub.calledOnceWith(claimlink, null)).to.equal(true)
 
       expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({ 'need': 'wine' }))
       expect(claim.previous).to.equal(prevClaimlink)
@@ -422,34 +378,30 @@ describe('discipl-core', () => {
       let claimlink = 'link:discipl:mock:claimRef:with:some:columns'
       let prevClaimlink = 'link:discipl:mock:previous'
 
-      let getStub = sinon.stub().returns({ 'data': { 'need': 'wine' }, 'previous': 'previous' })
-      let getNameStub = sinon.stub().returns('mock')
+      let getStub = sinon.stub().returns({ 'data': { 'need': 'wine' }, 'previous': prevClaimlink })
 
-      let stubConnector = { get: getStub, getName: getNameStub }
+      let stubConnector = { get: getStub }
       await discipl.registerConnector('mock', stubConnector)
 
       let claim = await discipl.get(claimlink)
 
-      expect(getStub.calledOnceWith('claimRef:with:some:columns', null), 'Unexpected value for claim ref').to.equal(true)
-      expect(getNameStub.calledOnce).to.equal(true)
+      expect(getStub.calledOnceWith(claimlink, null), 'Unexpected value for claim ref').to.equal(true)
 
       expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({ 'need': 'wine' }))
       expect(claim.previous).to.equal(prevClaimlink)
     })
 
     it('should be able to attest a claim', async () => {
-      let ssid = { did: 'did:discipl:mock:111' }
+      let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
       let claimlink = 'link:discipl:mock:claimRef'
 
-      let claimStub = sinon.stub().returns('attestationRef')
-      let getNameStub = sinon.stub().returns('mock')
-      let stubConnector = { claim: claimStub, getName: getNameStub }
+      let claimStub = sinon.stub().returns('link:discipl:mock:attestationRef')
+      let stubConnector = { claim: claimStub }
 
       await discipl.registerConnector('mock', stubConnector)
 
       let attestationLink = await discipl.attest(ssid, 'agree', claimlink)
-      expect(getNameStub.calledOnce).to.equal(true)
-      expect(claimStub.calledOnceWith({ did: 'did:discipl:mock:111', connector: stubConnector, pubkey: '111' }, { 'agree': claimlink })).to.equal(true)
+      expect(claimStub.calledOnceWith(ssid.did, ssid.privkey, { 'agree': claimlink })).to.equal(true)
 
       expect(attestationLink).to.equal('link:discipl:mock:attestationRef')
     })
@@ -462,29 +414,27 @@ describe('discipl-core', () => {
 
       let verifyStub = sinon.stub()
 
-      verifyStub.onCall(0).returns('attestationRef')
+      verifyStub.onCall(0).returns('link:discipl:mock:attestationRef')
       // No revocations will be found
       verifyStub.onCall(1).returns(null)
       verifyStub.onCall(2).returns(null)
 
-      let getNameStub = sinon.stub().returns('mock')
+      let getDidOfClaimStub = sinon.stub().returns('did:discipl:mock:111')
 
-      let getSsidOfClaimStub = sinon.stub().returns({ pubkey: '111' })
-
-      let stubConnector = { verify: verifyStub, getName: getNameStub, getSsidOfClaim: getSsidOfClaimStub }
+      let stubConnector = { verify: verifyStub, getDidOfClaim: getDidOfClaimStub }
 
       await discipl.registerConnector('mock', stubConnector)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
-      expect(verifyStub.calledThrice).to.equal(true)
-      expect(verifyStub.args[0]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { agree: claimlink }])
-      expect(verifyStub.args[1]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
-      expect(verifyStub.args[2]).to.deep.equal([{ did: ssid.did, connector: stubConnector, pubkey: '111' }, { revoke: claimlink }])
-      expect(getNameStub.calledTwice).to.equal(true)
-      expect(getSsidOfClaimStub.calledOnce).to.equal(true)
-      expect(getSsidOfClaimStub.args[0]).to.deep.equal(['claimRef'])
-      expect(verifiedAttestor.did).to.equal(attestorSsid.did)
+      expect(verifyStub.callCount).to.equal(3)
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
+      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }])
+      expect(verifyStub.args[2]).to.deep.equal([ssid.did, { revoke: claimlink }])
+
+      expect(getDidOfClaimStub.calledOnce).to.equal(true)
+      expect(getDidOfClaimStub.args[0]).to.deep.equal(['link:discipl:mock:claimRef'])
+      expect(verifiedAttestor).to.equal(attestorSsid.did)
     })
 
     it('should not be able to verify an attestation, if there is no matching claim', async () => {
@@ -497,10 +447,10 @@ describe('discipl-core', () => {
 
       await discipl.registerConnector('mock', stubConnector)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
-      expect(verifyStub.calledOnce).to.equal(true)
-      expect(verifyStub.args[0]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { agree: claimlink }])
+      expect(verifyStub.callCount).to.equal(1)
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
 
       expect(verifiedAttestor).to.equal(null)
     })
@@ -513,26 +463,22 @@ describe('discipl-core', () => {
 
       let verifyStub = sinon.stub()
 
-      verifyStub.onCall(0).returns('attestationRef')
+      verifyStub.onCall(0).returns(attestationlink)
       // A revocation of the attestation will be found
-      verifyStub.onCall(1).returns('attestationRevocationRef')
+      verifyStub.onCall(1).returns(attestationrevocationlink)
       // No revocations of the revocation will be found
       verifyStub.onCall(2).returns(null)
 
-      let getNameStub = sinon.stub().returns('mock')
-
-      let stubConnector = { verify: verifyStub, getName: getNameStub }
+      let stubConnector = { verify: verifyStub }
 
       await discipl.registerConnector('mock', stubConnector)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
       expect(verifyStub.callCount).to.equal(3)
-      expect(verifyStub.args[0]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { agree: claimlink }])
-      expect(verifyStub.args[1]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
-      expect(verifyStub.args[2]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationrevocationlink }])
-
-      expect(getNameStub.callCount).to.equal(2)
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
+      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }])
+      expect(verifyStub.args[2]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationrevocationlink }])
 
       expect(verifiedAttestor).to.equal(null)
     })
@@ -543,33 +489,30 @@ describe('discipl-core', () => {
       let attestationlink = 'link:discipl:mock:attestationRef'
       let claimrevocationlink = 'link:discipl:mock:claimRevocationRef'
 
-      let getSsidOfClaimStub = sinon.stub().returns({ pubkey: 'claimant' })
+      let getDidOfClaimStub = sinon.stub().returns('did:discipl:mock:claimant')
       let verifyStub = sinon.stub()
 
-      verifyStub.onCall(0).returns('attestationRef')
+      verifyStub.onCall(0).returns(attestationlink)
       // No revocation of the attestation will be found
       verifyStub.onCall(1).returns(null)
       // A  revocations of the claim will be found
-      verifyStub.onCall(2).returns('claimRevocationRef')
+      verifyStub.onCall(2).returns(claimrevocationlink)
       // No revocation of the revocation of the claim will be found
       verifyStub.onCall(3).returns(null)
 
-      let getNameStub = sinon.stub().returns('mock')
-
-      let stubConnector = { verify: verifyStub, getName: getNameStub, getSsidOfClaim: getSsidOfClaimStub }
+      let stubConnector = { verify: verifyStub, getDidOfClaim: getDidOfClaimStub }
 
       await discipl.registerConnector('mock', stubConnector)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid])
+      let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
       expect(verifyStub.callCount).to.equal(4)
-      expect(verifyStub.args[0]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { agree: claimlink }])
-      expect(verifyStub.args[1]).to.deep.equal([{ did: 'did:discipl:mock:attestor', connector: stubConnector, pubkey: 'attestor' }, { revoke: attestationlink }])
-      expect(verifyStub.args[2]).to.deep.equal([{ did: 'did:discipl:mock:claimant', connector: stubConnector, pubkey: 'claimant' }, { revoke: claimlink }])
-      expect(verifyStub.args[3]).to.deep.equal([{ did: 'did:discipl:mock:claimant', connector: stubConnector, pubkey: 'claimant' }, { revoke: claimrevocationlink }])
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
+      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }])
+      expect(verifyStub.args[2]).to.deep.equal(['did:discipl:mock:claimant', { revoke: claimlink }])
+      expect(verifyStub.args[3]).to.deep.equal(['did:discipl:mock:claimant', { revoke: claimrevocationlink }])
 
-      expect(getNameStub.callCount).to.equal(3)
-      expect(getSsidOfClaimStub.callCount).to.equal(1)
+      expect(getDidOfClaimStub.callCount).to.equal(1)
 
       expect(verifiedAttestor).to.equal(null)
     })
