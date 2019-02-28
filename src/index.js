@@ -3,10 +3,7 @@ import { Observable } from 'rxjs'
 import { concat, filter, map } from 'rxjs/operators'
 import { BaseConnector } from '../../discipl-core-baseconnector'
 
-const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
-const LINK_PREFIX = 'link' + DID_DELIMITER + 'discipl' + DID_DELIMITER
-const DID_PREFIX = 'did' + DID_DELIMITER + 'discipl' + DID_DELIMITER
 const REVOKE_PREDICATE = 'revoke'
 
 var disciplCoreConnectors = []
@@ -199,13 +196,7 @@ const observeAll = async (connector, claimFilter) => {
   }))
 }
 
-const isLink = (str) => {
-  return typeof str === 'string' && str.startsWith(LINK_PREFIX)
-}
 
-const isDid = (str) => {
-  return typeof str === 'string' && str.startsWith(DID_PREFIX)
-}
 
 /**
  * Exports linked claim data starting with the claim the given link refers to.
@@ -215,6 +206,7 @@ const isDid = (str) => {
  * A claim is never exported twice; circulair references are not followed.
  */
 const exportLD = async (didOrLink, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) => {
+  // TODO: Replace with BaseConnector version
   let isDidBool = isDid(didOrLink)
   let isLinkBool = isLink(didOrLink)
   if (!isDidBool && !isLinkBool) {
@@ -285,6 +277,7 @@ const exportLD = async (didOrLink, maxdepth = 3, ssid = null, visitedStack = [],
 const importLD = async (data) => {
   let succeeded = null
   for (let did in data) {
+    // TODO: Replace with baseconnector call
     if (did.indexOf(DID_PREFIX) !== 0) {
       continue
     }
