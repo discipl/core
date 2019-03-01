@@ -63,8 +63,7 @@ const newSsid = async (connector) => {
 const claim = async (ssid, data) => {
   let connectorName = BaseConnector.getConnectorName(ssid.did)
   let connector = await getConnector(connectorName)
-  let link = await connector.claim(ssid.did, ssid.privkey, data)
-  return link
+  return await connector.claim(ssid.did, ssid.privkey, data)
 }
 
 /**
@@ -83,8 +82,7 @@ const attest = async (ssid, predicate, link) => {
  * If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as been attested.
  * If none of the given ssid's have attested, the method returns null
  */
-const verify = async (predicate, link, dids, all = false) => {
-  let result = []
+const verify = async (predicate, link, dids) => {
   for (let did of dids) {
     if (typeof did !== 'string') {
       continue
@@ -98,17 +96,13 @@ const verify = async (predicate, link, dids, all = false) => {
     if (attestationLink) {
       if (await verify(REVOKE_PREDICATE, attestationLink, [did]) == null) {
         if (predicate === REVOKE_PREDICATE || await verify(REVOKE_PREDICATE, link, [await getDidOfLinkedClaim(link)]) == null) {
-          if (all) {
-            result.push(did)
-          } else {
-            return did
-          }
+          return did
         }
       }
     }
   }
-  if (result.length === 0) { return null }
-  return result
+
+  return null
 }
 
 /**
@@ -248,21 +242,16 @@ const exportLD = async (didOrLink, maxdepth = 3, ssid = null, visitedStack = [],
       if (data.hasOwnProperty(elem)) {
         let value = data[elem]
         let exportValue = await exportLD(value, maxdepth, ssid, visitedStack)
-        try {
-          if (Array.isArray(data)) {
-            linkData.push(exportValue)
-          } else {
-            linkData[elem] = exportValue
-          }
-        } catch (err) {
-          linkData[elem] = { [value]: { 'export-error': err } }
+
+        if (Array.isArray(data)) {
+          linkData.push(exportValue)
+        } else {
+          linkData[elem] = exportValue
         }
       }
     }
 
     channelData.push({ [currentLink]: linkData })
-  } else {
-    channelData.push({ [currentLink]: 'NOT_FOUND' })
   }
 
   return { [currentDid]: channelData }
@@ -291,7 +280,6 @@ const importLD = async (data) => {
         let l = Object.keys(claim[predicate][nestedDid][0])[0]
         claim = { [predicate]: l }
       }
-
 
       let connectorName = BaseConnector.getConnectorName(did)
       let connector = await getConnector(connectorName)
