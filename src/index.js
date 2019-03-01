@@ -13,7 +13,10 @@ var disciplCoreConnectors = []
  */
 
 /**
- * requires and holds in memory the given discipl connector (if not done before)
+ * Requires and holds in memory the given discipl connector (if not done before)
+ *
+ * @param {string} connectorName
+ * @returns {Promise<void>}
  */
 const initializeConnector = async (connectorName) => {
   if (!Object.keys(disciplCoreConnectors).includes(connectorName)) {
@@ -23,25 +26,31 @@ const initializeConnector = async (connectorName) => {
 }
 
 /**
- * returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
+ * Returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
+ *
+ * @param {string} connectorName
+ * @returns {Promise<*>} The connector (needs to extend {@link BaseConnector})
  */
-const getConnector = async (connector) => {
-  await initializeConnector(connector)
-  return disciplCoreConnectors[connector]
+const getConnector = async (connectorName) => {
+  await initializeConnector(connectorName)
+  return disciplCoreConnectors[connectorName]
 }
 
 /**
  * Registers a connector explicitly.
  *
- * @param name of the connector. Packages containing a connector follow the naming convention CONNECTOR_MODULE_PREFIX + name
- * @param connector instantiated object representing the connector
+ * @param {string} name - Name of the connector
+ * @param {object} connector - Instantiated object representing the connector
  */
 const registerConnector = (name, connector) => {
   disciplCoreConnectors[name] = connector
 }
 
 /**
- * Retrieves an Ssid object for the claim referenced in the given link. Note that the Ssid object will not contain the private key for obvious reasons
+ * Retrieves the did that made the claim referenced in the given link
+ *
+ * @param {string} link
+ * @returns {Promise<string>} did
  */
 const getDidOfLinkedClaim = async (link) => {
   let connectorName = BaseConnector.getConnectorName(link)
@@ -50,24 +59,40 @@ const getDidOfLinkedClaim = async (link) => {
 }
 
 /**
- * Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for
+ * Generates a new ssid using the specified connector
+ *
+ * @param {string} connectorName - Name of the connector used
+ * @returns {Promise<{privkey: string, did: string}>}
  */
-const newSsid = async (connector) => {
-  let conn = await getConnector(connector)
+const newSsid = async (connectorName) => {
+  let conn = await getConnector(connectorName)
   return conn.newIdentity()
 }
 
 /**
- * Adds a claim to the (end of the) channel of the given ssid (containing the did and probably privkey as only requirement). Returns a link to this claim.
+ * Adds a claim to the (end of the) channel of the given ssid. Returns a link to this claim.
+ *
+ * @param {object} ssid
+ * @param {string} ssid.did - Did that makes the claim
+ * @param {string} ssid.privkey - Private key to sign the claim
+ * @param {object} data - Data to be claimed
+ * @returns {Promise<string>}
  */
 const claim = async (ssid, data) => {
   let connectorName = BaseConnector.getConnectorName(ssid.did)
   let connector = await getConnector(connectorName)
-  return await connector.claim(ssid.did, ssid.privkey, data)
+  return connector.claim(ssid.did, ssid.privkey, data)
 }
 
 /**
  * Adds an attestation claim of the claim the given link refers to using the given predicate in the channel of the given ssid
+ *
+ * @param {object} ssid
+ * @param {string} ssid.did - Did that makes the attestation
+ * @param {string} ssid.privkey - Private key to sign the attestation
+ * @param {string} predicate - Statement being made about the claim linked
+ * @param {string} link - Object of the attestation
+ * @returns {Promise<string>} Link to the attestation
  */
 const attest = async (ssid, predicate, link) => {
   let attest = {}
@@ -77,10 +102,12 @@ const attest = async (ssid, predicate, link) => {
 
 /**
  * Will verify existence of an attestation of the claim referenced in the given link and mentioning the given predicate.
- * It will check the channels of the given ssid's. By default it will return the first ssid whose channel contained a matching attestation.
- * You can also make this method check the channel of every ssid after which the method will return an array of all ssid's that have attested.
- * If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as been attested.
- * If none of the given ssid's have attested, the method returns null
+ * If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as having been attested.
+ *
+ * @param {string} predicate
+ * @param {string} link
+ * @param {string[]} dids
+ * @returns {Promise<string>} The first did that attested, null if none have.
  */
 const verify = async (predicate, link, dids) => {
   for (let did of dids) {
@@ -107,9 +134,12 @@ const verify = async (predicate, link, dids) => {
 
 /**
  * Retrieves the data of the claim a given link refers to along with a link to the previous claim in the same channel.
- * @param {string} link - link to the claim of which the data should be retreved
- * @param {json} ssid - Optional : the ssid of the actor (on the same platform as the claim the links refers to) that wants to get the data but may not have permission without identifying itself
- * @return {json} - {data, linkToPrevious}
+ *
+ * @param {string} link - link to the claim of which the data should be retrieved
+ * @param {object} ssid - Optional: Authorizaiton method if the claim in question is not publically visible
+ * @param {string} ssid.did - Did that makes the request
+ * @param {string} ssid.privkey - Private key to sign the request
+ * @return {Promise<{data: object, previous: string}>}
  */
 const get = async (link, ssid = null) => {
   let connectorName = BaseConnector.getConnectorName(link)
@@ -118,13 +148,13 @@ const get = async (link, ssid = null) => {
 }
 
 /**
- * Subscribes a given callback function to be called when new claims are found with given parameters.
+ * Returns an Observable with claims
  *
- * @param did {string} did to filter claims
- * @param claimFilter {object} filters by the content of claims
- * @param historical {boolean} if true, the result will start at the beginning of the channel
- * @param connector {object} needs to be provided in order to listen platform-wide without ssid
- * @returns {Promise<Observable<any>>}
+ * @param {string} did - Did to filter claims
+ * @param {object} claimFilter - filters by the content of claims
+ * @param {boolean} historical - if true, the result will start at the beginning of the channel
+ * @param {object} connector - needs to be provided in order to listen platform-wide without ssid
+ * @returns {Promise<Observable<{claim: {data: object, previous: string}, did: string}>>}
  */
 const observe = async (did, claimFilter, historical = false, connector = null) => {
   if (connector != null && did == null) {
@@ -189,8 +219,6 @@ const observeAll = async (connector, claimFilter) => {
     return claim
   }))
 }
-
-
 
 /**
  * Exports linked claim data starting with the claim the given link refers to.
