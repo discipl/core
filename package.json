@@ -1,6 +1,6 @@
 {
   "name": "@discipl/core",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Discipl Core API",
   "main": "dist/index.js",
   "module": "src/index.js",
