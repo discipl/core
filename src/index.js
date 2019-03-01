@@ -206,9 +206,8 @@ const observeAll = async (connector, claimFilter) => {
  * A claim is never exported twice; circulair references are not followed.
  */
 const exportLD = async (didOrLink, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) => {
-  // TODO: Replace with BaseConnector version
-  let isDidBool = isDid(didOrLink)
-  let isLinkBool = isLink(didOrLink)
+  let isDidBool = BaseConnector.isDid(didOrLink)
+  let isLinkBool = BaseConnector.isLink(didOrLink)
   if (!isDidBool && !isLinkBool) {
     return didOrLink
   }
@@ -277,8 +276,7 @@ const exportLD = async (didOrLink, maxdepth = 3, ssid = null, visitedStack = [],
 const importLD = async (data) => {
   let succeeded = null
   for (let did in data) {
-    // TODO: Replace with baseconnector call
-    if (did.indexOf(DID_PREFIX) !== 0) {
+    if (!BaseConnector.isDid(did)) {
       continue
     }
 
