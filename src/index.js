@@ -284,14 +284,14 @@ const importLD = async (data) => {
       let link = Object.keys(data[did][i])[0]
       let claim = data[did][i][link]
       let predicate = Object.keys(claim)[0]
-      try {
-        let res = await importLD(claim[predicate])
-        if (res != null) {
-          let nestedDid = Object.keys(claim[predicate])[0]
-          let l = Object.keys(claim[predicate][nestedDid][0])[0]
-          claim = { [predicate]: l }
-        }
-      } catch { }
+
+      let res = await importLD(claim[predicate])
+      if (res != null) {
+        let nestedDid = Object.keys(claim[predicate])[0]
+        let l = Object.keys(claim[predicate][nestedDid][0])[0]
+        claim = { [predicate]: l }
+      }
+
 
       let connectorName = BaseConnector.getConnectorName(did)
       let connector = await getConnector(connectorName)
