@@ -1,7 +1,7 @@
 import { loadConnector } from './connector-loader'
 import { Observable } from 'rxjs'
 import { concat, filter, map } from 'rxjs/operators'
-import { BaseConnector } from '../../discipl-core-baseconnector'
+import { BaseConnector } from '@discipl/core-baseconnector'
 
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
 const REVOKE_PREDICATE = 'revoke'
