@@ -1,11 +1,9 @@
 import { loadConnector } from './connector-loader'
 import { Observable } from 'rxjs'
-import { filter, map, concat } from 'rxjs/operators'
+import { concat, filter, map } from 'rxjs/operators'
+import { BaseConnector } from '@discipl/core-baseconnector'
 
-const DID_DELIMITER = ':'
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
-const LINK_PREFIX = 'link' + DID_DELIMITER + 'discipl' + DID_DELIMITER
-const DID_PREFIX = 'did' + DID_DELIMITER + 'discipl' + DID_DELIMITER
 const REVOKE_PREDICATE = 'revoke'
 
 var disciplCoreConnectors = []
@@ -15,7 +13,10 @@ var disciplCoreConnectors = []
  */
 
 /**
- * requires and holds in memory the given discipl connector (if not done before)
+ * Requires and holds in memory the given discipl connector (if not done before)
+ *
+ * @param {string} connectorName
+ * @returns {Promise<void>}
  */
 const initializeConnector = async (connectorName) => {
   if (!Object.keys(disciplCoreConnectors).includes(connectorName)) {
@@ -25,102 +26,73 @@ const initializeConnector = async (connectorName) => {
 }
 
 /**
- * returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
+ * Returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
+ *
+ * @param {string} connectorName
+ * @returns {Promise<*>} The connector (needs to extend {@link BaseConnector})
  */
-const getConnector = async (connector) => {
-  await initializeConnector(connector)
-  return disciplCoreConnectors[connector]
+const getConnector = async (connectorName) => {
+  await initializeConnector(connectorName)
+  return disciplCoreConnectors[connectorName]
 }
 
 /**
  * Registers a connector explicitly.
  *
- * @param name of the connector. Packages containing a connector follow the naming convention CONNECTOR_MODULE_PREFIX + name
- * @param connector instantiated object representing the connector
+ * @param {string} name - Name of the connector
+ * @param {object} connector - Instantiated object representing the connector
  */
 const registerConnector = (name, connector) => {
   disciplCoreConnectors[name] = connector
 }
 
 /**
- * extracts connector name and reference from a link string and returns it as a json object in the form of: {connector, reference}
+ * Retrieves the did that made the claim referenced in the given link
+ *
+ * @param {string} link
+ * @returns {Promise<string>} did
  */
-const splitLink = (link) => {
-  let splitted = link.split(DID_DELIMITER)
-  let connector = splitted[2]
-  let reference = splitted.slice(3).join(DID_DELIMITER)
-  return { 'connector': connector, 'reference': reference }
+const getDidOfLinkedClaim = async (link) => {
+  let connectorName = BaseConnector.getConnectorName(link)
+  let conn = await getConnector(connectorName)
+  return conn.getDidOfClaim(link)
 }
 
 /**
- * returns a link string for the given claim in the channel of the given ssid. claim is supposed to be a connector specific reference string
+ * Generates a new ssid using the specified connector
+ *
+ * @param {string} connectorName - Name of the connector used
+ * @returns {Promise<{privkey: string, did: string}>}
  */
-const getLink = (ssid, claim) => {
-  return asLink(ssid.connector, claim)
+const newSsid = async (connectorName) => {
+  let conn = await getConnector(connectorName)
+  return conn.newIdentity()
 }
 
 /**
- * returns a link string for the given claim reference on the platform of the given connector name. returns null if the claim reference is null or not a string
- */
-const asLink = (connector, claimReference) => {
-  if ((claimReference) && (typeof claimReference === 'string')) {
-    return LINK_PREFIX + connector.getName() + DID_DELIMITER + claimReference
-  }
-  return null
-}
-
-/**
- * checks if a given string seems to be a valid link (correct syntax and refers to an available connector). Does not check the claim the link refers to exists or not. The reference is not checked
- */
-const isValidLink = async (link) => {
-  try {
-    let connector = splitLink(link).connector
-    await getConnector(connector)
-    return link.indexOf(LINK_PREFIX) === 0
-  } catch (e) {
-    return false
-  }
-}
-
-/**
- * Retrieves an Ssid object for the claim referenced in the given link. Note that the Ssid object will not contain the private key for obvious reasons
- */
-const getSsidOfLinkedClaim = async (link) => {
-  let { connector, reference } = splitLink(link)
-  let conn = await getConnector(connector)
-  let ssid = await conn.getSsidOfClaim(reference)
-  return { 'did': DID_PREFIX + conn.getName() + DID_DELIMITER + ssid.pubkey }
-}
-
-const expandSsid = async (ssid) => {
-  let splitted = ssid.did.split(DID_DELIMITER)
-  ssid['connector'] = await getConnector(splitted[2])
-  ssid['pubkey'] = splitted[3]
-  return ssid
-}
-
-/**
- * Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for
- */
-const newSsid = async (connector) => {
-  let conn = await getConnector(connector)
-  let ssid = await conn.newSsid()
-  ssid['connector'] = conn
-  ssid['did'] = DID_PREFIX + conn.getName() + DID_DELIMITER + ssid.pubkey
-  return ssid
-}
-
-/**
- * Adds a claim to the (end of the) channel of the given ssid (containing the did and probably privkey as only requirement). Returns a link to this claim.
+ * Adds a claim to the (end of the) channel of the given ssid. Returns a link to this claim.
+ *
+ * @param {object} ssid
+ * @param {string} ssid.did - Did that makes the claim
+ * @param {string} ssid.privkey - Private key to sign the claim
+ * @param {object} data - Data to be claimed
+ * @returns {Promise<string>}
  */
 const claim = async (ssid, data) => {
-  await expandSsid(ssid)
-  let reference = await ssid.connector.claim(ssid, data)
-  return getLink(ssid, reference)
+  let connectorName = BaseConnector.getConnectorName(ssid.did)
+  let connector = await getConnector(connectorName)
+  return connector.claim(ssid.did, ssid.privkey, data)
 }
 
 /**
  * Adds an attestation claim of the claim the given link refers to using the given predicate in the channel of the given ssid
+ *
+ * @param {object} ssid
+ * @param {string} ssid.did - Did that makes the attestation
+ * @param {string} ssid.privkey - Private key to sign the attestation
+ * @param {string} predicate - Statement being made about the claim linked
+ * @param {string} link - Object of the attestation
+ * @returns {Promise<string>} Link to the attestation
  */
 const attest = async (ssid, predicate, link) => {
   let attest = {}
@@ -130,72 +102,72 @@ const attest = async (ssid, predicate, link) => {
 
 /**
  * Will verify existence of an attestation of the claim referenced in the given link and mentioning the given predicate.
- * It will check the channels of the given ssid's. By default it will return the first ssid whose channel contained a matching attestation.
- * You can also make this method check the channel of every ssid after which the method will return an array of all ssid's that have attested.
- * If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as been attested.
- * If none of the given ssid's have attested, the method returns null
+ * If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as having been attested.
+ *
+ * @param {string} predicate
+ * @param {string} link
+ * @param {string[]} dids
+ * @returns {Promise<string>} The first did that attested, null if none have.
  */
-const verify = async (predicate, link, ssids, all = false) => {
-  let result = []
-  for (let i in ssids) {
-    let ssid = ssids[i]
-    if (!(ssid)) continue
-    await expandSsid(ssid)
+const verify = async (predicate, link, dids) => {
+  for (let did of dids) {
+    if (typeof did !== 'string') {
+      continue
+    }
+    let connectorName = BaseConnector.getConnectorName(did)
+    let connector = await getConnector(connectorName)
     let attestation = {}
+
     attestation[predicate] = link
-    let reference = await ssid.connector.verify(ssid, attestation)
-    if (reference) {
-      if (await verify(REVOKE_PREDICATE, getLink(ssid, reference), [ssid]) == null) {
-        if (predicate === REVOKE_PREDICATE || await verify(REVOKE_PREDICATE, link, [await getSsidOfLinkedClaim(link)]) == null) {
-          if (all) {
-            result.push(ssid)
-          } else {
-            return ssid
-          }
+    let attestationLink = await connector.verify(did, attestation)
+    if (attestationLink) {
+      if (await verify(REVOKE_PREDICATE, attestationLink, [did]) == null) {
+        if (predicate === REVOKE_PREDICATE || await verify(REVOKE_PREDICATE, link, [await getDidOfLinkedClaim(link)]) == null) {
+          return did
         }
       }
     }
   }
-  if (result.length === 0) { return null }
-  return result
+
+  return null
 }
 
 /**
  * Retrieves the data of the claim a given link refers to along with a link to the previous claim in the same channel.
- * @param {string} link - link to the claim of which the data should be retreved
- * @param {json} ssid - Optional : the ssid of the actor (on the same platform as the claim the links refers to) that wants to get the data but may not have permission without identifying itself
- * @return {json} - {data, linkToPrevious}
+ *
+ * @param {string} link - link to the claim of which the data should be retrieved
+ * @param {object} ssid - Optional: Authorizaiton method if the claim in question is not publically visible
+ * @param {string} ssid.did - Did that makes the request
+ * @param {string} ssid.privkey - Private key to sign the request
+ * @return {Promise<{data: object, previous: string}>}
  */
 const get = async (link, ssid = null) => {
-  let { connector, reference } = splitLink(link)
-  let conn = await getConnector(connector)
-  let result = await conn.get(reference, ssid)
-  result.previous = asLink(conn, result.previous)
-  return result
+  let connectorName = BaseConnector.getConnectorName(link)
+  let conn = await getConnector(connectorName)
+  return conn.get(link, ssid)
 }
 
 /**
- * Subscribes a given callback function to be called when new claims are found with given parameters.
+ * Returns an Observable with claims
  *
- * @param ssid {object} ssid to filter claims
- * @param claimFilter {object} filters by the content of claims
- * @param historical {boolean} if true, the result will start at the beginning of the channel
- * @param connector {object} needs to be provided in order to listen platform-wide without ssid
- * @returns {Promise<Observable<any>>}
+ * @param {string} did - Did to filter claims
+ * @param {object} claimFilter - filters by the content of claims
+ * @param {boolean} historical - if true, the result will start at the beginning of the channel
+ * @param {object} connector - needs to be provided in order to listen platform-wide without ssid
+ * @returns {Promise<Observable<{claim: {data: object, previous: string}, did: string}>>}
  */
-const observe = async (ssid, claimFilter, historical = false, connector = null) => {
-  if (connector != null && ssid == null) {
+const observe = async (did, claimFilter, historical = false, connector = null) => {
+  if (connector != null && did == null) {
     return observeAll(connector, claimFilter)
   }
-  if (ssid == null) {
-    throw Error('Observe without ssid or connector is not supported')
+  if (did == null) {
+    throw Error('Observe without did or connector is not supported')
   }
 
-  let expandedSsid = await expandSsid(ssid)
-  let currentObservable = (await expandedSsid.connector.observe(ssid, claimFilter))
+  let connectorName = BaseConnector.getConnectorName(did)
+  connector = await getConnector(connectorName)
+  let currentObservable = (await connector.observe(did, claimFilter))
     .pipe(map(claim => {
-      claim['claim'].previous = getLink(expandedSsid, claim['claim'].previous)
-      claim['ssid'] = { 'did': expandedSsid.did }
       return claim
     }))
 
@@ -204,13 +176,13 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
   }
 
   let historyObservable = Observable.create(async (observer) => {
-    let latestClaim = getLink(ssid, await expandedSsid.connector.getLatestClaim(ssid))
+    let latestClaim = await connector.getLatestClaim(did)
 
     let claims = []
 
     let current = await get(latestClaim)
     while (current != null) {
-      claims.unshift({ 'claim': current, 'ssid': { 'did': expandedSsid.did } })
+      claims.unshift({ 'claim': current, 'did': did })
 
       if (current.previous) {
         current = await get(current.previous)
@@ -244,40 +216,8 @@ const observe = async (ssid, claimFilter, historical = false, connector = null) 
 
 const observeAll = async (connector, claimFilter) => {
   return (await connector.observe(null, claimFilter)).pipe(map(claim => {
-    claim['claim'].previous = asLink(connector, claim['claim'].previous)
-    let pubkey = claim['ssid']['pubkey']
-    claim['ssid'] = { 'did': DID_PREFIX + connector.getName() + DID_DELIMITER + pubkey }
     return claim
   }))
-}
-
-/**
- * Helper method for exportLD which detects a value to be a ssid, did or link and returns the ssid and link (the one given or to the latest claim in a channel of a did/ssid) or null otherwise
- * throws error when given a object intended to be a ssid but isn't
- */
-const detectSsidLinkFromDidSsidOrLink = async (value) => {
-  let currentLink = null
-  let currentSsid = null
-  let withPrevious = false
-  if (typeof value === 'string') {
-    if (await isValidLink(value)) {
-      currentLink = value
-      currentSsid = await getSsidOfLinkedClaim(currentLink)
-    } else if (value.indexOf(DID_PREFIX) === 0) {
-      currentSsid = await expandSsid({ 'did': value })
-      currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
-      withPrevious = true
-    } else {
-      return null
-    }
-  } else if (Object.keys(value).includes('did')) {
-    currentSsid = await expandSsid(value)
-    currentLink = getLink(currentSsid, await currentSsid.connector.getLatestClaim(currentSsid))
-    withPrevious = true
-  } else {
-    return null
-  }
-  return { 'ssid': currentSsid, 'link': currentLink, 'withPrevious': withPrevious }
 }
 
 /**
@@ -287,19 +227,25 @@ const detectSsidLinkFromDidSsidOrLink = async (value) => {
  * will contain the value MAX_DEPTH_REACHED alongside of the link instead of an exported dataset. You can use this method to iteratively expand the dataset using the link that was not followed.
  * A claim is never exported twice; circulair references are not followed.
  */
-const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) => {
-  let ssidlink = await detectSsidLinkFromDidSsidOrLink(SsidDidOrLink)
-  if (ssidlink == null) {
-    return SsidDidOrLink
+const exportLD = async (didOrLink, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) => {
+  let isDidBool = BaseConnector.isDid(didOrLink)
+  let isLinkBool = BaseConnector.isLink(didOrLink)
+  if (!isDidBool && !isLinkBool) {
+    return didOrLink
   }
-  let currentLink = ssidlink.link
-  let currentSsid = ssidlink.ssid
-  if (ssidlink.withPrevious) {
+
+  let connectorName = BaseConnector.getConnectorName(didOrLink)
+  let connector = await getConnector(connectorName)
+
+  let currentDid = isDidBool ? didOrLink : await connector.getDidOfClaim(didOrLink)
+  let currentLink = isLinkBool ? didOrLink : await connector.getLatestClaim(didOrLink)
+
+  if (isDidBool) {
     withPrevious = true
   }
 
   if (visitedStack.length >= maxdepth) {
-    return { SsidDidOrLink: MAX_DEPTH_REACHED }
+    return { didOrLink: MAX_DEPTH_REACHED }
   } else if (!withPrevious) {
     visitedStack.push(currentLink)
   }
@@ -311,8 +257,8 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
     let data = res.data
 
     if (res.previous && withPrevious) {
-      let prevData = await exportLD(res.previous, maxdepth, currentSsid.did, visitedStack, true)
-      channelData = prevData[currentSsid.did]
+      let prevData = await exportLD(res.previous, maxdepth, currentDid, visitedStack, true)
+      channelData = prevData[currentDid]
     }
 
     let linkData = {}
@@ -324,24 +270,19 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
       if (data.hasOwnProperty(elem)) {
         let value = data[elem]
         let exportValue = await exportLD(value, maxdepth, ssid, visitedStack)
-        try {
-          if (Array.isArray(data)) {
-            linkData.push(exportValue)
-          } else {
-            linkData[elem] = exportValue
-          }
-        } catch (err) {
-          linkData[elem] = { [value]: { 'export-error': err } }
+
+        if (Array.isArray(data)) {
+          linkData.push(exportValue)
+        } else {
+          linkData[elem] = exportValue
         }
       }
     }
 
     channelData.push({ [currentLink]: linkData })
-  } else {
-    channelData.push({ [currentLink]: 'NOT_FOUND' })
   }
 
-  return { [currentSsid.did]: channelData }
+  return { [currentDid]: channelData }
 }
 
 /**
@@ -352,25 +293,26 @@ const exportLD = async (SsidDidOrLink, maxdepth = 3, ssid = null, visitedStack =
 const importLD = async (data) => {
   let succeeded = null
   for (let did in data) {
-    if (did.indexOf(DID_PREFIX) !== 0) {
+    if (!BaseConnector.isDid(did)) {
       continue
     }
-    let ssid = { did: did }
-    await expandSsid(ssid)
+
     for (let i in data[did]) {
       let link = Object.keys(data[did][i])[0]
       let claim = data[did][i][link]
       let predicate = Object.keys(claim)[0]
-      try {
-        let res = await importLD(claim[predicate])
-        if (res != null) {
-          let nestedDid = Object.keys(claim[predicate])[0]
-          let l = Object.keys(claim[predicate][nestedDid][0])[0]
-          claim = { [predicate]: l }
-        }
-      } catch { }
-      let splittedLink = splitLink(link)
-      let result = await ssid.connector.import(ssid, splittedLink.reference, claim)
+
+      let res = await importLD(claim[predicate])
+      if (res != null) {
+        let nestedDid = Object.keys(claim[predicate])[0]
+        let l = Object.keys(claim[predicate][nestedDid][0])[0]
+        claim = { [predicate]: l }
+      }
+
+      let connectorName = BaseConnector.getConnectorName(did)
+      let connector = await getConnector(connectorName)
+
+      let result = await connector.import(did, link, claim)
       if (result == null) {
         return null
       } else {
