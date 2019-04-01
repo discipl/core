@@ -35,7 +35,7 @@ describe('discipl-core', () => {
       let claimlink1 = await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
-      let claim = await discipl.get(claimlink2)
+      let claim = await discipl.get(claimlink2, ssid)
       expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({ 'need': 'wine' }))
       expect(claim.previous).to.equal(claimlink1)
     })
@@ -49,7 +49,7 @@ describe('discipl-core', () => {
 
       let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
 
-      let attestation = await discipl.get(attestationLink)
+      let attestation = await discipl.get(attestationLink, attestorSsid)
 
       expect(attestation.data.agree).to.equal(claimlink2)
       expect(attestation.previous).to.equal(null)
@@ -61,10 +61,11 @@ describe('discipl-core', () => {
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
       let attestorSsid = await discipl.newSsid('ephemeral')
+      await discipl.allow(attestorSsid)
 
       await discipl.attest(attestorSsid, 'agree', claimlink2)
 
-      let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, ssid.did, null, 'did:discipl:ephemeral:1234', attestorSsid.did])
+      let verifiedAttestor = await discipl.verify('agree', claimlink2, [ssid, ssid.did, null, 'did:discipl:ephemeral:1234', attestorSsid.did], ssid)
 
       // The first ssid that is valid and proves the attestation should be returned
       expect(verifiedAttestor).to.equal(attestorSsid.did)
@@ -90,7 +91,7 @@ describe('discipl-core', () => {
     it('be able to observe', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(ssid.did)
+      let observable = await discipl.observe(ssid.did, ssid)
       let resultPromise = observable.pipe(take(1)).toPromise()
       await discipl.claim(ssid, { 'need': 'wine' })
 
@@ -110,7 +111,7 @@ describe('discipl-core', () => {
     it('be able to observe platform-wide', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(null, {}, false, await discipl.getConnector('ephemeral'))
+      let observable = await discipl.observe(null, ssid, {}, false, await discipl.getConnector('ephemeral'))
       let resultPromise = observable.pipe(take(1)).toPromise()
       await discipl.claim(ssid, { 'need': 'wine' })
 
@@ -130,9 +131,10 @@ describe('discipl-core', () => {
     it('be able to observe historically', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(ssid.did, null, true)
+      let observable = await discipl.observe(ssid.did, ssid, null, true)
 
       await discipl.claim(ssid, { 'need': 'wine' })
+
       let resultPromise = observable.pipe(take(2)).pipe(toArray()).toPromise()
 
       let result = await resultPromise
@@ -164,7 +166,7 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'need': 'tea' })
-      let observable = await discipl.observe(ssid.did, { 'need': 'wine' }, true)
+      let observable = await discipl.observe(ssid.did, ssid, { 'need': 'wine' }, true)
 
       let resultPromise = observable.pipe(take(1)).toPromise()
 
@@ -188,7 +190,7 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'desire': 'wine' })
       await discipl.claim(ssid, { 'need': 'wine' })
-      let observable = await discipl.observe(ssid.did, { 'desire': null }, true)
+      let observable = await discipl.observe(ssid.did, ssid, { 'desire': null }, true)
 
       let resultPromise = observable.pipe(take(1)).toPromise()
 
@@ -222,10 +224,12 @@ describe('discipl-core', () => {
       await discipl.claim(ssid, { 'need': 'beer' })
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
+      await discipl.allow(ssid)
+
       let attestorSsid = await discipl.newSsid('ephemeral')
 
       let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
-      let exportedData = await discipl.exportLD(attestorSsid.did)
+      let exportedData = await discipl.exportLD(attestorSsid.did, attestorSsid)
 
       expect(exportedData[attestorSsid.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: { 'need': 'wine' } } ] } } })
     })
@@ -236,10 +240,11 @@ describe('discipl-core', () => {
       let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
       let ssid2 = await discipl.newSsid('ephemeral')
+      await discipl.allow(ssid2)
       let claimlink3 = await discipl.claim(ssid2, { 'need': 'water' })
 
       let attestationLink = await discipl.attest(ssid, 'agree', claimlink3)
-      let exportedData = await discipl.exportLD(ssid.did)
+      let exportedData = await discipl.exportLD(ssid.did, ssid)
 
       expect(exportedData[ssid.did][0]).to.deep.equal({ [claimlink1]: { 'need': 'beer' } })
       expect(exportedData[ssid.did][1]).to.deep.equal({ [claimlink2]: { 'need': 'wine' } })
@@ -248,12 +253,13 @@ describe('discipl-core', () => {
 
     it('should be able to export more complex json objects as data', async () => {
       let ssid = await discipl.newSsid('ephemeral')
+      await discipl.allow(ssid)
       let claimlink1 = await discipl.claim(ssid, { 'need': 'wine' })
       let claimlink2 = await discipl.claim(ssid, [{ 'need': 'beer' }, claimlink1])
 
       let ssid2 = await discipl.newSsid('ephemeral')
       let attestationLink = await discipl.attest(ssid2, 'agree', claimlink2)
-      let exportedData = await discipl.exportLD(ssid2.did)
+      let exportedData = await discipl.exportLD(ssid2.did, ssid2)
 
       expect(exportedData[ssid2.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: [{ 'need': 'beer' }, { [ssid.did]: [ { [claimlink1]: { 'need': 'wine' } } ] }] } ] } } })
     })
@@ -268,8 +274,8 @@ describe('discipl-core', () => {
       await discipl.claim(ssid2, { 'require': 'drink' })
       await discipl.claim(ssid2, { 'solved': 'problem' })
       await discipl.claim(ssid2, { 'attendTo': 'wishes' })
-      let ld = await discipl.exportLD(ssid.did)
-      let ld2 = await discipl.exportLD(ssid2.did)
+      let ld = await discipl.exportLD(ssid.did, ssid)
+      let ld2 = await discipl.exportLD(ssid2.did, ssid2)
 
       // reset ephemeral connector (in memory mode)
       let ConnectorModuleClass = await loadConnector('ephemeral')
@@ -278,11 +284,11 @@ describe('discipl-core', () => {
       let result = await discipl.importLD({ ...ld, ...ld2 })
       expect(result).to.equal(true)
 
-      let channelData = await discipl.exportLD(ssid.did)
+      let channelData = await discipl.exportLD(ssid.did, ssid)
       expect(channelData[ssid.did][0][Object.keys(channelData[ssid.did][0])]).to.deep.equal({ 'need': 'food' })
       expect(channelData[ssid.did][1][Object.keys(channelData[ssid.did][1])]).to.deep.equal({ 'match': 'link' })
       expect(channelData[ssid.did][2][Object.keys(channelData[ssid.did][2])]).to.deep.equal({ 'allow': 'some' })
-      let channelData2 = await discipl.exportLD(ssid2.did)
+      let channelData2 = await discipl.exportLD(ssid2.did, ssid2)
       expect(channelData2[ssid2.did][0][Object.keys(channelData2[ssid2.did][0])]).to.deep.equal({ 'require': 'drink' })
       expect(channelData2[ssid2.did][1][Object.keys(channelData2[ssid2.did][1])]).to.deep.equal({ 'solved': 'problem' })
       expect(channelData2[ssid2.did][2][Object.keys(channelData2[ssid2.did][2])]).to.deep.equal({ 'attendTo': 'wishes' })
@@ -293,24 +299,27 @@ describe('discipl-core', () => {
       let ssid2 = await discipl.newSsid('ephemeral')
       let ssid3 = await discipl.newSsid('ephemeral')
 
+      await discipl.allow(ssid)
+      await discipl.allow(ssid2)
+
       let link = await discipl.claim(ssid, { 'need': 'food' })
       let link2 = await discipl.claim(ssid2, { 'match': link })
       let link3 = await discipl.claim(ssid3, { 'solved': link2 })
 
-      let ld = await discipl.exportLD(link3)
+      let ld = await discipl.exportLD(link3, ssid3)
 
       // reset ephemeral connector (in memory mode)
       let ConnectorModuleClass = await loadConnector('ephemeral')
       discipl.registerConnector('ephemeral', new ConnectorModuleClass())
 
-      let result = await discipl.importLD(ld)
+      let result = await discipl.importLD(ld, ssid.did)
       expect(result).to.equal(true)
 
-      let channelData = await discipl.exportLD(ssid.did)
+      let channelData = await discipl.exportLD(ssid.did, ssid)
       expect(channelData[ssid.did][0][Object.keys(channelData[ssid.did][0])]).to.deep.equal({ 'need': 'food' })
-      let channelData2 = await discipl.exportLD(ssid2.did)
+      let channelData2 = await discipl.exportLD(ssid2.did, ssid)
       expect(channelData2[ssid2.did][0][Object.keys(channelData2[ssid2.did][0])]).to.deep.equal({ 'match': { [ssid.did]: [{ [link]: { 'need': 'food' } }] } })
-      let channelData3 = await discipl.exportLD(link3)
+      let channelData3 = await discipl.exportLD(link3, ssid)
       expect(channelData3[ssid3.did][0][Object.keys(channelData3[ssid3.did][0])]).to.deep.equal({ 'solved': { [ssid2.did]: [{ [link2]: { 'match': { [ssid.did]: [{ [link]: { 'need': 'food' } }] } } }] } })
     })
   },
@@ -368,7 +377,8 @@ describe('discipl-core', () => {
 
       let claim = await discipl.get(claimlink)
 
-      expect(getStub.calledOnceWith(claimlink, null)).to.equal(true)
+      console.log(getStub.args)
+      expect(getStub.calledOnceWith(claimlink)).to.equal(true)
 
       expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({ 'need': 'wine' }))
       expect(claim.previous).to.equal(prevClaimlink)
@@ -385,7 +395,7 @@ describe('discipl-core', () => {
 
       let claim = await discipl.get(claimlink)
 
-      expect(getStub.calledOnceWith(claimlink, null), 'Unexpected value for claim ref').to.equal(true)
+      expect(getStub.calledOnceWith(claimlink), 'Unexpected value for claim ref').to.equal(true)
 
       expect(JSON.stringify(claim.data)).to.equal(JSON.stringify({ 'need': 'wine' }))
       expect(claim.previous).to.equal(prevClaimlink)
@@ -428,9 +438,9 @@ describe('discipl-core', () => {
       let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
       expect(verifyStub.callCount).to.equal(3)
-      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
-      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }])
-      expect(verifyStub.args[2]).to.deep.equal([ssid.did, { revoke: claimlink }])
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }, null, null])
+      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }, null, null])
+      expect(verifyStub.args[2]).to.deep.equal([ssid.did, { revoke: claimlink }, null, null])
 
       expect(getDidOfClaimStub.calledOnce).to.equal(true)
       expect(getDidOfClaimStub.args[0]).to.deep.equal(['link:discipl:mock:claimRef'])
@@ -450,7 +460,7 @@ describe('discipl-core', () => {
       let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
       expect(verifyStub.callCount).to.equal(1)
-      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }, null, null])
 
       expect(verifiedAttestor).to.equal(null)
     })
@@ -476,9 +486,9 @@ describe('discipl-core', () => {
       let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
       expect(verifyStub.callCount).to.equal(3)
-      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
-      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }])
-      expect(verifyStub.args[2]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationrevocationlink }])
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }, null, null])
+      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }, null, null])
+      expect(verifyStub.args[2]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationrevocationlink }, null, null])
 
       expect(verifiedAttestor).to.equal(null)
     })
@@ -507,10 +517,10 @@ describe('discipl-core', () => {
       let verifiedAttestor = await discipl.verify('agree', claimlink, [attestorSsid.did])
 
       expect(verifyStub.callCount).to.equal(4)
-      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }])
-      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }])
-      expect(verifyStub.args[2]).to.deep.equal(['did:discipl:mock:claimant', { revoke: claimlink }])
-      expect(verifyStub.args[3]).to.deep.equal(['did:discipl:mock:claimant', { revoke: claimrevocationlink }])
+      expect(verifyStub.args[0]).to.deep.equal(['did:discipl:mock:attestor', { agree: claimlink }, null, null])
+      expect(verifyStub.args[1]).to.deep.equal(['did:discipl:mock:attestor', { revoke: attestationlink }, null, null])
+      expect(verifyStub.args[2]).to.deep.equal(['did:discipl:mock:claimant', { revoke: claimlink }, null, null])
+      expect(verifyStub.args[3]).to.deep.equal(['did:discipl:mock:claimant', { revoke: claimrevocationlink }, null, null])
 
       expect(getDidOfClaimStub.callCount).to.equal(1)
 
