@@ -91,8 +91,9 @@ describe('discipl-core', () => {
     it('be able to observe', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(ssid.did, ssid)
-      let resultPromise = observable.pipe(take(1)).toPromise()
+      let observeResult = await discipl.observe(ssid.did, ssid)
+      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
+      await observeResult.readyPromise
       await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
@@ -111,8 +112,9 @@ describe('discipl-core', () => {
     it('be able to observe platform-wide', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(null, ssid, {}, false, await discipl.getConnector('ephemeral'))
-      let resultPromise = observable.pipe(take(1)).toPromise()
+      let observeResult = await discipl.observe(null, ssid, {}, false, await discipl.getConnector('ephemeral'))
+      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
+      await observeResult.readyPromise
       await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
@@ -131,11 +133,12 @@ describe('discipl-core', () => {
     it('be able to observe historically', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
-      let observable = await discipl.observe(ssid.did, ssid, null, true)
+      let observeResult = await discipl.observe(ssid.did, ssid, null, true)
 
       await discipl.claim(ssid, { 'need': 'wine' })
 
-      let resultPromise = observable.pipe(take(2)).pipe(toArray()).toPromise()
+      let resultPromise = observeResult.observable.pipe(take(2)).pipe(toArray()).toPromise()
+      await observeResult.readyPromise
 
       let result = await resultPromise
 
@@ -166,10 +169,10 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'need': 'tea' })
-      let observable = await discipl.observe(ssid.did, ssid, { 'need': 'wine' }, true)
+      let observeResult = await discipl.observe(ssid.did, ssid, { 'need': 'wine' }, true)
 
-      let resultPromise = observable.pipe(take(1)).toPromise()
-
+      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
+      await observeResult.readyPromise
       let result = await resultPromise
 
       expect(result).to.deep.equal(
@@ -190,10 +193,10 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'wine' })
       await discipl.claim(ssid, { 'desire': 'wine' })
       await discipl.claim(ssid, { 'need': 'wine' })
-      let observable = await discipl.observe(ssid.did, ssid, { 'desire': null }, true)
+      let observeResult = await discipl.observe(ssid.did, ssid, { 'desire': null }, true)
 
-      let resultPromise = observable.pipe(take(1)).toPromise()
-
+      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
+      await observeResult.readyPromise
       let result = await resultPromise
 
       expect(result).to.deep.equal(

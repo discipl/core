@@ -1,6 +1,6 @@
 import { loadConnector } from './connector-loader'
 import { Observable } from 'rxjs'
-import { concat, filter, map } from 'rxjs/operators'
+import { concat, filter } from 'rxjs/operators'
 import { BaseConnector } from '@discipl/core-baseconnector'
 
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
@@ -184,13 +184,10 @@ const observe = async (did, observerSsid = { 'did': null, 'privkey': null }, cla
 
   let connectorName = BaseConnector.getConnectorName(did)
   connector = await getConnector(connectorName)
-  let currentObservable = (await connector.observe(did, claimFilter, observerSsid.did, observerSsid.privkey))
-    .pipe(map(claim => {
-      return claim
-    }))
+  let currentObservableResult = await connector.observe(did, claimFilter, observerSsid.did, observerSsid.privkey)
 
   if (!historical) {
-    return currentObservable
+    return currentObservableResult
   }
 
   let historyObservable = Observable.create(async (observer) => {
@@ -229,13 +226,11 @@ const observe = async (did, observerSsid = { 'did': null, 'privkey': null }, cla
     return true
   }))
 
-  return historyObservable.pipe(concat(currentObservable))
+  return { 'observable': historyObservable.pipe(concat(currentObservableResult.observable)), 'readyPromise': currentObservableResult.readyPromise }
 }
 
 const observeAll = async (connector, claimFilter, observerSsid) => {
-  return (await connector.observe(null, claimFilter, observerSsid.did, observerSsid.privkey)).pipe(map(claim => {
-    return claim
-  }))
+  return connector.observe(null, claimFilter, observerSsid.did, observerSsid.privkey)
 }
 
 /**
