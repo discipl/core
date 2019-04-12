@@ -111,7 +111,7 @@ const allow = async (ssid, scope = null, did = null) => {
     allowConfiguration['did'] = did
   }
 
-  claim(ssid, { [BaseConnector.ALLOW]: allowConfiguration })
+  await claim(ssid, { [BaseConnector.ALLOW]: allowConfiguration })
 }
 
 /**
