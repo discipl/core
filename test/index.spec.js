@@ -4,7 +4,6 @@ import * as discipl from '../src/index.js'
 import { loadConnector } from '../src/connector-loader.js'
 
 import sinon from 'sinon'
-import { take, toArray } from 'rxjs/operators'
 
 describe('discipl-core', () => {
   describe('The disciple core API with ephemeral connector', () => {
@@ -92,8 +91,7 @@ describe('discipl-core', () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observeResult = await discipl.observe(ssid.did, ssid)
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.takeOne()
       await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
@@ -109,12 +107,33 @@ describe('discipl-core', () => {
       })
     })
 
+    it('be able to observe and subscribe', async () => {
+      let ssid = await discipl.newSsid('ephemeral')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      let observeResult = await discipl.observe(ssid.did, ssid)
+
+      return new Promise(async (resolve, reject) => {
+        await observeResult.subscribe((result) => {
+          expect(result).to.deep.equal({
+            'claim': {
+              'data': {
+                'need': 'wine'
+              },
+              'previous': claimLink
+            },
+            'did': ssid.did
+          })
+          resolve()
+        })
+        await discipl.claim(ssid, { 'need': 'wine' })
+      })
+    })
+
     it('be able to observe platform-wide', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observeResult = await discipl.observe(null, ssid, {}, false, await discipl.getConnector('ephemeral'))
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.takeOne()
       await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
@@ -137,8 +156,7 @@ describe('discipl-core', () => {
 
       await discipl.claim(ssid, { 'need': 'wine' })
 
-      let resultPromise = observeResult.observable.pipe(take(2)).pipe(toArray()).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.take(2)
 
       let result = await resultPromise
 
@@ -171,8 +189,7 @@ describe('discipl-core', () => {
       await discipl.claim(ssid, { 'need': 'tea' })
       let observeResult = await discipl.observe(ssid.did, ssid, { 'need': 'wine' }, true)
 
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.takeOne()
       let result = await resultPromise
 
       expect(result).to.deep.equal(
@@ -195,9 +212,7 @@ describe('discipl-core', () => {
       await discipl.claim(ssid, { 'need': 'wine' })
       let observeResult = await discipl.observe(ssid.did, ssid, { 'desire': null }, true)
 
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
-      let result = await resultPromise
+      let result = await observeResult.takeOne()
 
       expect(result).to.deep.equal(
         {

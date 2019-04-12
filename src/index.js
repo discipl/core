@@ -2,6 +2,7 @@ import { loadConnector } from './connector-loader'
 import { Observable } from 'rxjs'
 import { concat, filter } from 'rxjs/operators'
 import { BaseConnector } from '@discipl/core-baseconnector'
+import ObserveResult from './observe-result'
 
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
 const REVOKE_PREDICATE = 'revoke'
@@ -172,11 +173,12 @@ const get = async (link, ssid = null) => {
  * @param {boolean} historical - if true, the result will start at the beginning of the channel
  * @param {object} connector - needs to be provided in order to listen platform-wide without ssid
  * @param {object} observerSsid - Ssid to allow access to claims
- * @returns {Promise<Observable<{claim: {data: object, previous: string}, did: string}>>}
+ * @returns {ObserveResult}
  */
 const observe = async (did, observerSsid = { 'did': null, 'privkey': null }, claimFilter = {}, historical = false, connector = null) => {
   if (connector != null && did == null) {
-    return observeAll(connector, claimFilter, observerSsid)
+    let observeAllResult = await observeAll(connector, claimFilter, observerSsid)
+    return new ObserveResult(observeAllResult.observable, observeAllResult.readyPromise)
   }
   if (did == null) {
     throw Error('Observe without did or connector is not supported')
@@ -187,7 +189,7 @@ const observe = async (did, observerSsid = { 'did': null, 'privkey': null }, cla
   let currentObservableResult = await connector.observe(did, claimFilter, observerSsid.did, observerSsid.privkey)
 
   if (!historical) {
-    return currentObservableResult
+    return new ObserveResult(currentObservableResult.observable, currentObservableResult.readyPromise)
   }
 
   let historyObservable = Observable.create(async (observer) => {
@@ -226,7 +228,7 @@ const observe = async (did, observerSsid = { 'did': null, 'privkey': null }, cla
     return true
   }))
 
-  return { 'observable': historyObservable.pipe(concat(currentObservableResult.observable)), 'readyPromise': currentObservableResult.readyPromise }
+  return new ObserveResult(historyObservable.pipe(concat(currentObservableResult.observable)), currentObservableResult.readyPromise)
 }
 
 const observeAll = async (connector, claimFilter, observerSsid) => {
