@@ -360,5 +360,6 @@ export {
   importLD,
   revoke,
   observe,
-  MAX_DEPTH_REACHED
+  MAX_DEPTH_REACHED,
+  ObserveResult
 }
