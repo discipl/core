@@ -4,7 +4,6 @@ import * as discipl from '../src/index.js'
 import { loadConnector } from '../src/connector-loader.js'
 
 import sinon from 'sinon'
-import { take, toArray } from 'rxjs/operators'
 
 describe('discipl-core', () => {
   describe('The disciple core API with ephemeral connector', () => {
@@ -92,8 +91,7 @@ describe('discipl-core', () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observeResult = await discipl.observe(ssid.did, ssid)
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.takeOne()
       await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
@@ -109,12 +107,33 @@ describe('discipl-core', () => {
       })
     })
 
+    it('be able to observe and subscribe', async () => {
+      let ssid = await discipl.newSsid('ephemeral')
+      let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
+      let observeResult = await discipl.observe(ssid.did, ssid)
+
+      return new Promise(async (resolve, reject) => {
+        await observeResult.subscribe((result) => {
+          expect(result).to.deep.equal({
+            'claim': {
+              'data': {
+                'need': 'wine'
+              },
+              'previous': claimLink
+            },
+            'did': ssid.did
+          })
+          resolve()
+        })
+        await discipl.claim(ssid, { 'need': 'wine' })
+      })
+    })
+
     it('be able to observe platform-wide', async () => {
       let ssid = await discipl.newSsid('ephemeral')
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observeResult = await discipl.observe(null, ssid, {}, false, await discipl.getConnector('ephemeral'))
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.takeOne()
       await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
@@ -137,8 +156,7 @@ describe('discipl-core', () => {
 
       await discipl.claim(ssid, { 'need': 'wine' })
 
-      let resultPromise = observeResult.observable.pipe(take(2)).pipe(toArray()).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.take(2)
 
       let result = await resultPromise
 
@@ -171,8 +189,7 @@ describe('discipl-core', () => {
       await discipl.claim(ssid, { 'need': 'tea' })
       let observeResult = await discipl.observe(ssid.did, ssid, { 'need': 'wine' }, true)
 
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
+      let resultPromise = observeResult.takeOne()
       let result = await resultPromise
 
       expect(result).to.deep.equal(
@@ -195,9 +212,7 @@ describe('discipl-core', () => {
       await discipl.claim(ssid, { 'need': 'wine' })
       let observeResult = await discipl.observe(ssid.did, ssid, { 'desire': null }, true)
 
-      let resultPromise = observeResult.observable.pipe(take(1)).toPromise()
-      await observeResult.readyPromise
-      let result = await resultPromise
+      let result = await observeResult.takeOne()
 
       expect(result).to.deep.equal(
         {
@@ -353,22 +368,48 @@ describe('discipl-core', () => {
 
       expect(claimlink).to.equal('link:discipl:mock:claimRef')
     })
-    /*
-    it('should be able to add a claim to some new channel through a claim() method with an object as reference', async () => {
-      let ssid = { did: 'did:discipl:mock:111' }
-      let claimStub = sinon.stub().returns({ someKey: 'infoNeededByConnector' })
-      let getNameStub = sinon.stub().returns('mock')
-      let stubConnector = { claim: claimStub, getName: getNameStub }
+
+    it('should be able to do an allow claim with a scope', async () => {
+      let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
+
+      let stubConnector = { claim: claimStub }
+
+      await discipl.registerConnector('mock', stubConnector)
+      await discipl.allow(ssid, 'link:discipl:abcabc')
+
+      expect(claimStub.callCount).to.equal(1)
+      expect(claimStub.args[0]).to.deep.equal(['did:discipl:mock:111', 'SECRET_KEY', { 'DISCIPL_ALLOW': { 'scope': 'link:discipl:abcabc' } }])
+    })
+
+    it('should be able to do an allow claim with a did', async () => {
+      let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
+
+      let stubConnector = { claim: claimStub }
+
+      await discipl.registerConnector('mock', stubConnector)
+      await discipl.allow(ssid, null, 'did:discipl:mock:222')
+
+      expect(claimStub.callCount).to.equal(1)
+      expect(claimStub.args[0]).to.deep.equal(['did:discipl:mock:111', 'SECRET_KEY', { 'DISCIPL_ALLOW': { 'did': 'did:discipl:mock:222' } }])
+    })
+
+    it('should be able to add a claim to some new channel through a claim() method through a mocked connector', async () => {
+      let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
+
+      let stubConnector = { claim: claimStub }
 
       await discipl.registerConnector('mock', stubConnector)
       let claimlink = await discipl.claim(ssid, { 'need': 'beer' })
 
-      expect(claimStub.calledOnceWith({ did: 'did:discipl:mock:111', connector: stubConnector, pubkey: '111' }, { 'need': 'beer' })).to.equal(true)
-      expect(getNameStub.calledOnce).to.equal(true)
+      expect(claimStub.callCount).to.equal(1)
+      expect(claimStub.calledOnceWith('did:discipl:mock:111', 'SECRET_KEY', { 'need': 'beer' })).to.equal(true)
 
-      expect(claimlink).to.equal('link:discipl:mock:jdkIBFi8PojrrOV/Z9qtuS+8hDyUUMUkono9Rof4ZxlA6OIQjOWcHeSWGD73fn2I')
+      expect(claimlink).to.equal('link:discipl:mock:claimRef')
     })
-*/
+
     it('should be able to get a claim added through claims', async () => {
       let claimlink = 'link:discipl:mock:claimRef'
       let prevClaimlink = 'link:discipl:mock:previous'
