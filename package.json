@@ -1,6 +1,6 @@
 {
   "name": "@discipl/core",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Discipl Core API",
   "main": "dist/index.js",
   "module": "src/index.js",
@@ -22,6 +22,7 @@
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov && ./node_modules/codecov/bin/codecov"
   },
   "dependencies": {
+    "@discipl/core-baseconnector": "^0.2.1",
     "rxjs": "^6.4.0"
   },
   "devDependencies": {
