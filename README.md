@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.org/discipl/core.svg?branch=master)](https://travis-ci.org/discipl/core)
 
 <br/>
-NOTE: Look at our [website](http://discipl.org) or see the [main repository](https://github.com/discipl/main) for the explanation of what Discipl is about?
+NOTE: Look at our website (http://discipl.org) or see the  main repository (https://github.com/discipl/main) for the explanation of what Discipl is about?
 
 ## The Discipl Core API
 
@@ -34,15 +34,15 @@ Many platforms can be supported to become part of the discipl platform.
 
 At the moment just a few have initial implementations that are up to date, most are planned, others desired. All these supported platforms have their own connector repository.
 
-- Ephemeral : local in memory storage of claims. Offers both a client side and client-server modus
-- NLX : special type of connector to legacy API's through the NLX network
+- [Ephemeral](https://github.com/discipl/discipl-core-ephemeral) : local in memory storage of claims. Offers both a client side and client-server modus
+- [NLX](https://github.com/discipl/discipl-core-nlx) : special type of connector to legacy API's through the NLX network
 - IOTA : (currently being updated)
 - Fabric : (development will start soon)
 - IPV8 : needs to be updated
 - uPort : needs to be updated
 - ...
 
-Platform connectors implement the connector interface defined in the [BaseConnector](https://github.com/discipl/BaseConnector).
+Platform connectors implement the connector interface defined in the [BaseConnector](https://github.com/discipl/discipl-core-baseconnector).
 
 Private wallet solutions might get a different kind of interface that implement issue() and validate() methods apart from the Core API. Currently the only component doing so is discipl-paper-wallet, but other platforms like IRMA, Sovrin, uPort, WeMe, IPV8 based wallet etc. might follow soon.
 
