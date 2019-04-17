@@ -18,8 +18,8 @@ class ObserveResult {
     return resultPromise
   }
 
-  async subscribe (subscriber) {
-    this._observable.subscribe(subscriber)
+  async subscribe (subscriber, errorSubscriber = (e) => console.log(e)) {
+    this._observable.subscribe(subscriber, errorSubscriber)
     await this._readyPromise
   }
 }
