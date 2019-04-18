@@ -1,38 +1,60 @@
+## Modules
+
+<dl>
+<dt><a href="#module_discipl-core">discipl-core</a></dt>
+<dd></dd>
+</dl>
+
+## Functions
+
+<dl>
+<dt><a href="#loadConnector">loadConnector()</a></dt>
+<dd><p>loads a connector based on module name using a dynamic import</p>
+</dd>
+</dl>
+
 <a name="module_discipl-core"></a>
 
 ## discipl-core
 
 * [discipl-core](#module_discipl-core)
-    * [~initializeConnector()](#module_discipl-core..initializeConnector)
-    * [~getConnector()](#module_discipl-core..getConnector)
+    * [~initializeConnector(connectorName)](#module_discipl-core..initializeConnector) ⇒ <code>Promise.&lt;void&gt;</code>
+    * [~getConnector(connectorName)](#module_discipl-core..getConnector) ⇒ <code>Promise.&lt;\*&gt;</code>
     * [~registerConnector(name, connector)](#module_discipl-core..registerConnector)
-    * [~splitLink()](#module_discipl-core..splitLink)
-    * [~getLink()](#module_discipl-core..getLink)
-    * [~isValidLink()](#module_discipl-core..isValidLink)
-    * [~getSsidOfLinkedClaim()](#module_discipl-core..getSsidOfLinkedClaim)
-    * [~getHash()](#module_discipl-core..getHash)
-    * [~newSsid()](#module_discipl-core..newSsid)
-    * [~claim()](#module_discipl-core..claim)
-    * [~attest()](#module_discipl-core..attest)
-    * [~verify()](#module_discipl-core..verify)
-    * [~get(link, ssid)](#module_discipl-core..get) ⇒ <code>json</code>
-    * [~subscribe(ssid)](#module_discipl-core..subscribe)
-    * [~detectSsidLinkFromDidSsidOrLink()](#module_discipl-core..detectSsidLinkFromDidSsidOrLink)
+    * [~getDidOfLinkedClaim(link)](#module_discipl-core..getDidOfLinkedClaim) ⇒ <code>Promise.&lt;string&gt;</code>
+    * [~newSsid(connectorName)](#module_discipl-core..newSsid) ⇒ <code>Promise.&lt;{privkey: string, did: string}&gt;</code>
+    * [~claim(ssid, data)](#module_discipl-core..claim) ⇒ <code>Promise.&lt;string&gt;</code>
+    * [~attest(ssid, predicate, link)](#module_discipl-core..attest) ⇒ <code>Promise.&lt;string&gt;</code>
+    * [~verify(predicate, link, dids, verifierSsid)](#module_discipl-core..verify) ⇒ <code>Promise.&lt;string&gt;</code>
+    * [~get(link, ssid)](#module_discipl-core..get) ⇒ <code>Promise.&lt;{data: object, previous: string}&gt;</code>
+    * [~observe(did, claimFilter, historical, connector, observerSsid)](#module_discipl-core..observe) ⇒ <code>ObserveResult</code>
     * [~exportLD()](#module_discipl-core..exportLD)
+    * [~importLD()](#module_discipl-core..importLD)
     * [~revoke(ssid, link)](#module_discipl-core..revoke)
 
 <a name="module_discipl-core..initializeConnector"></a>
 
-### discipl-core~initializeConnector()
-requires and holds in memory the given discipl connector (if not done before)
+### discipl-core~initializeConnector(connectorName) ⇒ <code>Promise.&lt;void&gt;</code>
+Requires and holds in memory the given discipl connector (if not done before)
 
 **Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+
+| Param | Type |
+| --- | --- |
+| connectorName | <code>string</code> | 
+
 <a name="module_discipl-core..getConnector"></a>
 
-### discipl-core~getConnector()
-returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
+### discipl-core~getConnector(connectorName) ⇒ <code>Promise.&lt;\*&gt;</code>
+Returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
 
 **Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+**Returns**: <code>Promise.&lt;\*&gt;</code> - The connector (needs to extend [BaseConnector](BaseConnector))  
+
+| Param | Type |
+| --- | --- |
+| connectorName | <code>string</code> | 
+
 <a name="module_discipl-core..registerConnector"></a>
 
 ### discipl-core~registerConnector(name, connector)
@@ -40,100 +62,109 @@ Registers a connector explicitly.
 
 **Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
 
-| Param | Description |
+| Param | Type | Description |
+| --- | --- | --- |
+| name | <code>string</code> | Name of the connector |
+| connector | <code>object</code> | Instantiated object representing the connector |
+
+<a name="module_discipl-core..getDidOfLinkedClaim"></a>
+
+### discipl-core~getDidOfLinkedClaim(link) ⇒ <code>Promise.&lt;string&gt;</code>
+Retrieves the did that made the claim referenced in the given link
+
+**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+**Returns**: <code>Promise.&lt;string&gt;</code> - did  
+
+| Param | Type |
 | --- | --- |
-| name | of the connector. Packages containing a connector follow the naming convention CONNECTOR_MODULE_PREFIX + name |
-| connector | instantiated object representing the connector |
+| link | <code>string</code> | 
 
-<a name="module_discipl-core..splitLink"></a>
-
-### discipl-core~splitLink()
-extracts connector name and reference from a link string and returns it as a json object in the form of: {connector, reference}
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..getLink"></a>
-
-### discipl-core~getLink()
-returns a link string for the given claim in the channel of the given ssid. claim can be a string in which case it needs to be a connector specific reference string, or it is a object holding claim(s) of which the hash of the stringified version is used as reference
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..isValidLink"></a>
-
-### discipl-core~isValidLink()
-checks if a given string seems to be a valid link (correct syntax and refers to an available connector). Does not check the claim the link refers to exists or not. The reference is not checked
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..getSsidOfLinkedClaim"></a>
-
-### discipl-core~getSsidOfLinkedClaim()
-Retrieves an Ssid object for the claim referenced in the given link. Note that the Ssid object will not contain the private key for obvious reasons
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..getHash"></a>
-
-### discipl-core~getHash()
-returns a HMAC-384 peppered hash of the given data with the did of the given ssid as key
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
 <a name="module_discipl-core..newSsid"></a>
 
-### discipl-core~newSsid()
-Generates a new ssid, a json object in the form of: {connector:connectorObj, did:did, pubkey:pubkey, privkey:privkey}, for the platform the given discipl connector name adds support for
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..claim"></a>
-
-### discipl-core~claim()
-Adds a claim to the (end of the) channel of the given ssid (containing the did and probably privkey as only requirement). Returns a link to this claim.
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..attest"></a>
-
-### discipl-core~attest()
-Adds an attestation claim of the claim the given link refers to using the given predicate in the channel of the given ssid
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..verify"></a>
-
-### discipl-core~verify()
-Will verify existence of an attestation of the claim referenced in the given link and mentioning the given predicate.
-It will check the channels of the given ssid's. By default it will return the first ssid whose channel contained a matching attestation.
-You can also make this method check the channel of every ssid after which the method will return an array of all ssid's that have attested.
-If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as been attested.
-If none of the given ssid's have attested, the method returns null
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-<a name="module_discipl-core..get"></a>
-
-### discipl-core~get(link, ssid) ⇒ <code>json</code>
-Retrieves the data of the claim a given link refers to along with a link to the previous claim in the same channel.
-
-**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
-**Returns**: <code>json</code> - - {data, linkToPrevious}  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| link | <code>string</code> |  | link to the claim of which the data should be retreved |
-| ssid | <code>json</code> | <code></code> | Optional : the ssid of the actor (on the same platform as the claim the links refers to) that wants to get the data but may not have permission without identifying itself |
-
-<a name="module_discipl-core..subscribe"></a>
-
-### discipl-core~subscribe(ssid)
-Subscribes a given callback function to be called when new claims are found in a given channel. Note that it will start at the end of the channel; previous claims that has already been added in the channel are ignored.
+### discipl-core~newSsid(connectorName) ⇒ <code>Promise.&lt;{privkey: string, did: string}&gt;</code>
+Generates a new ssid using the specified connector
 
 **Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| ssid | <code>json</code> | The ssid json object containing did as public key : {pubkey:did, privkey:pkey}. This should be the ssid of the channel to subscribe to |
+| connectorName | <code>string</code> | Name of the connector used |
 
-<a name="module_discipl-core..detectSsidLinkFromDidSsidOrLink"></a>
+<a name="module_discipl-core..claim"></a>
 
-### discipl-core~detectSsidLinkFromDidSsidOrLink()
-Helper method for exportLD which detects a value to be a ssid, did or link and returns the ssid and link (the one given or to the latest claim in a channel of a did/ssid) or null otherwise
-throws error when given a object intended to be a ssid but isn't
+### discipl-core~claim(ssid, data) ⇒ <code>Promise.&lt;string&gt;</code>
+Adds a claim to the (end of the) channel of the given ssid. Returns a link to this claim.
 
 **Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| ssid | <code>object</code> |  |
+| ssid.did | <code>string</code> | Did that makes the claim |
+| ssid.privkey | <code>string</code> | Private key to sign the claim |
+| data | <code>object</code> | Data to be claimed |
+
+<a name="module_discipl-core..attest"></a>
+
+### discipl-core~attest(ssid, predicate, link) ⇒ <code>Promise.&lt;string&gt;</code>
+Adds an attestation claim of the claim the given link refers to using the given predicate in the channel of the given ssid
+
+**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+**Returns**: <code>Promise.&lt;string&gt;</code> - Link to the attestation  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| ssid | <code>object</code> |  |
+| ssid.did | <code>string</code> | Did that makes the attestation |
+| ssid.privkey | <code>string</code> | Private key to sign the attestation |
+| predicate | <code>string</code> | Statement being made about the claim linked |
+| link | <code>string</code> | Object of the attestation |
+
+<a name="module_discipl-core..verify"></a>
+
+### discipl-core~verify(predicate, link, dids, verifierSsid) ⇒ <code>Promise.&lt;string&gt;</code>
+Will verify existence of an attestation of the claim referenced in the given link and mentioning the given predicate.
+If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as having been attested.
+
+**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+**Returns**: <code>Promise.&lt;string&gt;</code> - The first did that attested, null if none have.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| predicate | <code>string</code> |  |
+| link | <code>string</code> |  |
+| dids | <code>Array.&lt;string&gt;</code> |  |
+| verifierSsid | <code>object</code> | ssid object that grants access to the relevant claims |
+
+<a name="module_discipl-core..get"></a>
+
+### discipl-core~get(link, ssid) ⇒ <code>Promise.&lt;{data: object, previous: string}&gt;</code>
+Retrieves the data of the claim a given link refers to along with a link to the previous claim in the same channel.
+
+**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| link | <code>string</code> |  | link to the claim of which the data should be retrieved |
+| ssid | <code>object</code> | <code></code> | Optional: Authorizaiton method if the claim in question is not publically visible |
+| ssid.did | <code>string</code> |  | Did that makes the request |
+| ssid.privkey | <code>string</code> |  | Private key to sign the request |
+
+<a name="module_discipl-core..observe"></a>
+
+### discipl-core~observe(did, claimFilter, historical, connector, observerSsid) ⇒ <code>ObserveResult</code>
+Returns an Observable with claims
+
+**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| did | <code>string</code> |  | Did to filter claims |
+| claimFilter | <code>object</code> |  | filters by the content of claims |
+| historical | <code>boolean</code> | <code>false</code> | if true, the result will start at the beginning of the channel |
+| connector | <code>object</code> | <code></code> | needs to be provided in order to listen platform-wide without ssid |
+| observerSsid | <code>object</code> |  | Ssid to allow access to claims |
+
 <a name="module_discipl-core..exportLD"></a>
 
 ### discipl-core~exportLD()
@@ -142,6 +173,14 @@ Links contained in the data of the claim are exported also in a value alongside 
 By default, expansion like this is done at most three times. You can alter this depth of the export by setting the second argument. If the maximum depth is reached the exported data
 will contain the value MAX_DEPTH_REACHED alongside of the link instead of an exported dataset. You can use this method to iteratively expand the dataset using the link that was not followed.
 A claim is never exported twice; circulair references are not followed.
+
+**Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
+<a name="module_discipl-core..importLD"></a>
+
+### discipl-core~importLD()
+Imports claims given a dataset as returned by exportLD. Claims linked in the claims are not imported (so max depth = 1)
+Not all connectors will support this method and its functioning may be platform specific. Some may actually let you
+create claims in bulk through this import. Others will only check for existence and validate.
 
 **Kind**: inner method of [<code>discipl-core</code>](#module_discipl-core)  
 <a name="module_discipl-core..revoke"></a>
@@ -156,3 +195,9 @@ Adds a revocation attestation to the channel of the given ssid. Effectively revo
 | ssid | <code>json</code> | The ssid json object. The attestation is added to the channel of this ssid |
 | link | <code>string</code> | The link to the claim (or attestation) that should be attested as being revoked. Note that this claim must be in the channel of the given ssid to be effectively seen as revoked. |
 
+<a name="loadConnector"></a>
+
+## loadConnector()
+loads a connector based on module name using a dynamic import
+
+**Kind**: global function  
