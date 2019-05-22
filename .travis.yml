@@ -9,6 +9,7 @@ before_script:
 script:
   - npm run lint
   - npm test
+  - npm audit
   # other script steps might be done before running the actual analysis
 
 after_success:
