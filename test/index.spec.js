@@ -1,12 +1,18 @@
 /* eslint-env mocha */
 import { expect } from 'chai'
-import * as discipl from '../src/index.js'
 import { loadConnector } from '../src/connector-loader.js'
 
 import sinon from 'sinon'
+import { DisciplCore } from '../src'
+
+let discipl
 
 describe('discipl-core', () => {
   describe('The disciple core API with ephemeral connector', () => {
+    before(() => {
+      discipl = new DisciplCore()
+    })
+
     it('should be able to get the connector asynchronously', async () => {
       const connector = await discipl.getConnector('ephemeral')
       expect(connector.getName()).to.equal('ephemeral')
@@ -342,6 +348,9 @@ describe('discipl-core', () => {
     })
   },
   describe('The disciple core API with mocked connector', () => {
+    before(() => {
+      discipl = new DisciplCore()
+    })
     it('should be able to retrieve a new mocked ssid asynchronously', async () => {
       let newIdentityStub = sinon.stub().returns({ did: ''.padStart(88, '1'), privkey: ''.padStart(88, '2') })
       let stubConnector = { newIdentity: newIdentityStub }
