@@ -173,12 +173,15 @@ class DisciplCore {
    *
    * @param {string} did - Did to filter claims
    * @param {object} claimFilter - filters by the content of claims
-   * @param {boolean} historical - if true, the result will start at the beginning of the channel
+   * @param {boolean} historical - DEPRECATED if true, the result will start at the beginning of the channel
    * @param {object} connector - needs to be provided in order to listen platform-wide without ssid
    * @param {object} observerSsid - Ssid to allow access to claims
    * @returns {ObserveResult}
    */
   async observe (did, observerSsid = { 'did': null, 'privkey': null }, claimFilter = {}, historical = false, connector = null) {
+    if (historical) {
+      console.warn('Historical observation is deprecated and may be buggy')
+    }
     if (connector != null && did == null) {
       let observeAllResult = await this.observeAll(connector, claimFilter, observerSsid)
       return new ObserveResult(observeAllResult.observable, observeAllResult.readyPromise)
