@@ -1,12 +1,18 @@
 /* eslint-env mocha */
 import { expect } from 'chai'
-import * as discipl from '../src/index.js'
 import { loadConnector } from '../src/connector-loader.js'
 
 import sinon from 'sinon'
+import { DisciplCore } from '../src'
+
+let discipl
 
 describe('discipl-core', () => {
   describe('The disciple core API with ephemeral connector', () => {
+    before(() => {
+      discipl = new DisciplCore()
+    })
+
     it('should be able to get the connector asynchronously', async () => {
       const connector = await discipl.getConnector('ephemeral')
       expect(connector.getName()).to.equal('ephemeral')
@@ -92,7 +98,7 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observeResult = await discipl.observe(ssid.did, ssid)
       let resultPromise = observeResult.takeOne()
-      await discipl.claim(ssid, { 'need': 'wine' })
+      let claimLink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
 
@@ -103,7 +109,8 @@ describe('discipl-core', () => {
           },
           'previous': claimLink
         },
-        'did': ssid.did
+        'did': ssid.did,
+        'link': claimLink2
       })
     })
 
@@ -114,15 +121,14 @@ describe('discipl-core', () => {
 
       return new Promise(async (resolve, reject) => {
         await observeResult.subscribe((result) => {
-          expect(result).to.deep.equal({
-            'claim': {
-              'data': {
-                'need': 'wine'
-              },
-              'previous': claimLink
+          expect(result.claim).to.deep.equal({
+            'data': {
+              'need': 'wine'
             },
-            'did': ssid.did
+            'previous': claimLink
           })
+
+          expect(result.did).to.equal(ssid.did)
           resolve()
         })
         await discipl.claim(ssid, { 'need': 'wine' })
@@ -134,7 +140,7 @@ describe('discipl-core', () => {
       let claimLink = await discipl.claim(ssid, { 'need': 'beer' })
       let observeResult = await discipl.observe(null, ssid, {}, false, await discipl.getConnector('ephemeral'))
       let resultPromise = observeResult.takeOne()
-      await discipl.claim(ssid, { 'need': 'wine' })
+      let claimLink2 = await discipl.claim(ssid, { 'need': 'wine' })
 
       let result = await resultPromise
 
@@ -145,7 +151,8 @@ describe('discipl-core', () => {
           },
           'previous': claimLink
         },
-        'did': ssid.did
+        'did': ssid.did,
+        'link': claimLink2
       })
     })
 
@@ -342,6 +349,9 @@ describe('discipl-core', () => {
     })
   },
   describe('The disciple core API with mocked connector', () => {
+    before(() => {
+      discipl = new DisciplCore()
+    })
     it('should be able to retrieve a new mocked ssid asynchronously', async () => {
       let newIdentityStub = sinon.stub().returns({ did: ''.padStart(88, '1'), privkey: ''.padStart(88, '2') })
       let stubConnector = { newIdentity: newIdentityStub }
