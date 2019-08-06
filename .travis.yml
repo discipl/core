@@ -9,6 +9,7 @@ before_script:
 script:
   - npm run lint
   - npm test
+  - npm run docs; if [ ! -z "$(git status docs/ --porcelain)" ]; then echo "Documentation out of date"; exit 1; fi
   - npm audit
   # other script steps might be done before running the actual analysis
 
