@@ -23,7 +23,7 @@ describe('discipl-core', () => {
     it('should be able to retrieve a new ssid asynchronously', async () => {
       let ssid = await discipl.newSsid('ephemeral')
 
-      expect(ssid.privkey).to.be.a('string')
+      expect(ssid.privkey).to.be.a('Uint8Array')
       expect(ssid.did).to.be.a('string')
       expect(ssid.did.startsWith('did:discipl:ephemeral:')).to.equal(true)
     })
