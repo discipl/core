@@ -9,8 +9,5 @@
         }
       }
     ]
-  ],
-  "plugins": [
-    "babel-plugin-dynamic-import-node"
   ]
 }
