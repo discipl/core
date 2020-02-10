@@ -17,6 +17,12 @@ class DisciplCore {
   }
 
   /**
+   * @typedef {Object} ssid - Identifier of an actor
+   * @property {string} ssid.did - Did of the actor
+   * @property {string} ssid.privkey - Private key belonging to the did
+   */
+
+  /**
    * Requires and holds in memory the given discipl connector (if not done before)
    *
    * @param {string} connectorName
@@ -54,7 +60,7 @@ class DisciplCore {
    * Retrieves the did that made the claim referenced in the given link
    *
    * @param {string} link
-   * @returns {Promise<string>} did
+   * @returns {Promise<string>} Did that made the claim
    */
   async getDidOfLinkedClaim (link) {
     let connectorName = BaseConnector.getConnectorName(link)
@@ -66,7 +72,7 @@ class DisciplCore {
    * Generates a new ssid using the specified connector
    *
    * @param {string} connectorName - Name of the connector used
-   * @returns {Promise<{privkey: string, did: string}>}
+   * @returns {Promise<{privkey: string, did: string}>} Created ssid
    */
   async newSsid (connectorName) {
     let conn = await this.getConnector(connectorName)
@@ -74,13 +80,11 @@ class DisciplCore {
   }
 
   /**
-   * Adds a claim to the (end of the) channel of the given ssid. Returns a link to this claim.
+   * Adds a claim to the (end of the) channel of the given ssid.
    *
-   * @param {object} ssid
-   * @param {string} ssid.did - Did that makes the claim
-   * @param {string} ssid.privkey - Private key to sign the claim
+   * @param {ssid} ssid
    * @param {object} data - Data to be claimed
-   * @returns {Promise<string>}
+   * @returns {Promise<string>} Link to the made claim
    */
   async claim (ssid, data) {
     let connectorName = BaseConnector.getConnectorName(ssid.did)
@@ -89,14 +93,13 @@ class DisciplCore {
   }
 
   /**
-   * Adds an attestation claim of the claim the given link refers to using the given predicate in the channel of the given ssid
+   * Adds an attestation claim for a given link. The link will be be added to the channel of the given
+   * ssid referenced by the given predicate
    *
-   * @param {object} ssid
-   * @param {string} ssid.did - Did that makes the attestation
-   * @param {string} ssid.privkey - Private key to sign the attestation
+   * @param {ssid} ssid
    * @param {string} predicate - Statement being made about the claim linked
    * @param {string} link - Object of the attestation
-   * @returns {Promise<string>} Link to the attestation
+   * @returns {Promise<string>} Link to the made attestation
    */
   async attest (ssid, predicate, link) {
     let attest = {}
@@ -104,6 +107,13 @@ class DisciplCore {
     return this.claim(ssid, attest)
   }
 
+  /**
+   * Adds a claim to the (end of the) chanel of the given ssid with a specified scope and/or did
+   * 
+   * @param {ssid} ssid
+   * @param {string} scope - Scope of this claim. If not present, the scope is the whole channel
+   * @param {string} did - Did that is allowed access. If not present, everyone is allowed.
+   */
   async allow (ssid, scope = null, did = null) {
     const allowConfiguration = {}
     if (scope != null) {
@@ -119,15 +129,16 @@ class DisciplCore {
 
   /**
    * Will verify existence of an attestation of the claim referenced in the given link and mentioning the given predicate.
-   * If the referenced claim or an attestation itself are revoked, the method will not evaluate the claim as having been attested.
+   * If the referenced claim or an attestation itself are revoked, the claim will be treated as "not attested" and thus the
+   * method will return null
    *
-   * @param {string} predicate
-   * @param {string} link
-   * @param {string[]} dids
-   * @param {object} verifierSsid - ssid object that grants access to the relevant claims
-   * @returns {Promise<string>} The first did that attested, null if none have.
+   * @param {string} predicate - Attestation predicate
+   * @param {string} link - Link to the claim to verify attestation for
+   * @param {string[]} dids - Candidates that might attested the claim
+   * @param {ssid} verifierSsid - Ssid object that grants access to the relevant claims
+   * @returns {Promise<string>} The first did that attested, null if none have
    */
-  async verify (predicate, link, dids, verifierSsid = { 'did': null, 'privkey': null }) {
+  async verify (predicate, link, dids, verifierSsid = { did: null, privkey: null }) {
     for (let did of dids) {
       if (typeof did !== 'string') {
         continue
@@ -151,13 +162,11 @@ class DisciplCore {
   }
 
   /**
-   * Retrieves the data of the claim a given link refers to along with a link to the previous claim in the same channel.
+   * Retrieves the data of the claim a given link refers to, along with a link to the previous claim in the same channel
    *
    * @param {string} link - link to the claim of which the data should be retrieved
-   * @param {object} ssid - Optional: Authorizaiton method if the claim in question is not publically visible
-   * @param {string} ssid.did - Did that makes the request
-   * @param {string} ssid.privkey - Private key to sign the request
-   * @return {Promise<{data: object, previous: string}>}
+   * @param {ssid} [ssid] - Optional authorization method if the claim in question is not publically visible
+   * @return {Promise<{data: object, previous: string}>} Claim data
    */
   async get (link, ssid = null) {
     let connectorName = BaseConnector.getConnectorName(link)
@@ -169,16 +178,16 @@ class DisciplCore {
   }
 
   /**
-   * Returns an Observable with claims
+   * Observe for new claims that will be made by a specified did
    *
-   * @param {string} did - Did to filter claims
-   * @param {object} claimFilter - filters by the content of claims
+   * @param {string} did - Filter for claims made by a did
+   * @param {ssid} observerSsid - Ssid to allow access to claims
+   * @param {object} claimFilter - Filters by the content of claims
    * @param {boolean} historical - DEPRECATED if true, the result will start at the beginning of the channel
-   * @param {object} connector - needs to be provided in order to listen platform-wide without ssid
-   * @param {object} observerSsid - Ssid to allow access to claims
+   * @param {object} connector - Needs to be provided in order to listen platform-wide without ssid
    * @returns {ObserveResult}
    */
-  async observe (did, observerSsid = { 'did': null, 'privkey': null }, claimFilter = {}, historical = false, connector = null) {
+  async observe (did, observerSsid = { did: null, privkey: null }, claimFilter = {}, historical = false, connector = null) {
     if (historical) {
       console.warn('Historical observation is deprecated and may be buggy')
     }
@@ -237,6 +246,14 @@ class DisciplCore {
     return new ObserveResult(historyObservable.pipe(concat(currentObservableResult.observable)), currentObservableResult.readyPromise)
   }
 
+  /**
+   * Observe for new claims that will be made by anyone
+   *
+   * @param {object} connector - needs to be provided in order to listen platform-wide without ssid
+   * @param {object} claimFilter - Filters by the content of claims
+   * @param {ssid} observerSsid - Ssid to allow access to claims
+   * @returns {ObserveResult}
+   */
   async observeAll (connector, claimFilter, observerSsid) {
     return connector.observe(null, claimFilter, observerSsid.did, observerSsid.privkey)
   }
@@ -248,7 +265,7 @@ class DisciplCore {
    * will contain the value MAX_DEPTH_REACHED alongside of the link instead of an exported dataset. You can use this method to iteratively expand the dataset using the link that was not followed.
    * A claim is never exported twice; circulair references are not followed.
    */
-  async exportLD (didOrLink, exporterSsid = { 'did': null, 'privkey': null }, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) {
+  async exportLD (didOrLink, exporterSsid = { did: null, privkey: null }, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) {
     let isDidBool = BaseConnector.isDid(didOrLink)
     let isLinkBool = BaseConnector.isLink(didOrLink)
     if (!isDidBool && !isLinkBool) {
@@ -346,8 +363,10 @@ class DisciplCore {
 
   /**
    * Adds a revocation attestation to the channel of the given ssid. Effectively revokes the claim the given link refers to. Subsequent verification of the claim will not succeed.
-   * @param {json} ssid - The ssid json object. The attestation is added to the channel of this ssid
+   * 
+   * @param {ssid} ssid - The ssid makes the revoke attestation
    * @param {string} link - The link to the claim (or attestation) that should be attested as being revoked. Note that this claim must be in the channel of the given ssid to be effectively seen as revoked.
+   * @return {Promise<string>} Link to the attestation
    */
   async revoke (ssid, link) {
     return this.attest(ssid, REVOKE_PREDICATE, link)
