@@ -36,14 +36,25 @@ class DisciplCore {
   }
 
   /**
-   * Returns the connector object of the given discipl connector. Automaticly lazy loads the corresponding module
+   * Returns a instance of the given discipl connector and automaticly lazy loads the corresponding module
    *
-   * @param {string} connectorName
-   * @returns {Promise<*>} The connector (needs to extend {@link BaseConnector})
+   * @param {string} connectorName Name of the connector to load
+   * @returns {Promise<*>} Connector instance that extends from {@link BaseConnector}
    */
   async getConnector (connectorName) {
     await this.initializeConnector(connectorName)
     return this.disciplCoreConnectors[connectorName]
+  }
+
+  /**
+   * Extracts the connector name from a link or did and return a instance of the connector
+   *
+   * @param {string} linkOrDid String from which the connector needs to be extracted
+   * @returns {Promise<*>} Connector instance that extends from {@link BaseConnector}
+   */
+  async getConnectorForLinkOrDid (linkOrDid) {
+    let connectorName = BaseConnector.getConnectorName(linkOrDid)
+    return this.getConnector(connectorName)
   }
 
   /**
@@ -63,8 +74,7 @@ class DisciplCore {
    * @returns {Promise<string>} Did that made the claim
    */
   async getDidOfLinkedClaim (link) {
-    let connectorName = BaseConnector.getConnectorName(link)
-    let conn = await this.getConnector(connectorName)
+    let conn = await this.getConnectorForLinkOrDid(link)
     return conn.getDidOfClaim(link)
   }
 
@@ -87,8 +97,7 @@ class DisciplCore {
    * @returns {Promise<string>} Link to the made claim
    */
   async claim (ssid, data) {
-    let connectorName = BaseConnector.getConnectorName(ssid.did)
-    let connector = await this.getConnector(connectorName)
+    let connector = await this.getConnectorForLinkOrDid(ssid.did)
     return connector.claim(ssid.did, ssid.privkey, data)
   }
 
@@ -109,7 +118,7 @@ class DisciplCore {
 
   /**
    * Adds a claim to the (end of the) chanel of the given ssid with a specified scope and/or did
-   * 
+   *
    * @param {ssid} ssid
    * @param {string} scope - Scope of this claim. If not present, the scope is the whole channel
    * @param {string} did - Did that is allowed access. If not present, everyone is allowed.
@@ -143,8 +152,7 @@ class DisciplCore {
       if (typeof did !== 'string') {
         continue
       }
-      let connectorName = BaseConnector.getConnectorName(did)
-      let connector = await this.getConnector(connectorName)
+      let connector = await this.getConnectorForLinkOrDid(did)
       let attestation = {}
 
       attestation[predicate] = link
@@ -169,8 +177,7 @@ class DisciplCore {
    * @return {Promise<{data: object, previous: string}>} Claim data
    */
   async get (link, ssid = null) {
-    let connectorName = BaseConnector.getConnectorName(link)
-    let conn = await this.getConnector(connectorName)
+    let conn = await this.getConnectorForLinkOrDid(link)
     if (ssid != null) {
       return conn.get(link, ssid.did, ssid.privkey)
     }
@@ -199,8 +206,7 @@ class DisciplCore {
       throw Error('Observe without did or connector is not supported')
     }
 
-    let connectorName = BaseConnector.getConnectorName(did)
-    connector = await this.getConnector(connectorName)
+    connector = await this.getConnectorForLinkOrDid(did)
     let currentObservableResult = await connector.observe(did, claimFilter, observerSsid.did, observerSsid.privkey)
 
     if (!historical) {
@@ -272,8 +278,7 @@ class DisciplCore {
       return didOrLink
     }
 
-    let connectorName = BaseConnector.getConnectorName(didOrLink)
-    let connector = await this.getConnector(connectorName)
+    let connector = await this.getConnectorForLinkOrDid(didOrLink)
 
     let currentDid = isDidBool ? didOrLink : await connector.getDidOfClaim(didOrLink)
     let currentLink = isLinkBool ? didOrLink : await connector.getLatestClaim(didOrLink)
@@ -347,8 +352,7 @@ class DisciplCore {
           claim = { [predicate]: l }
         }
 
-        let connectorName = BaseConnector.getConnectorName(did)
-        let connector = await this.getConnector(connectorName)
+        let connector = await this.getConnectorForLinkOrDid(did)
 
         let result = await connector.import(did, link, claim, importerDid)
         if (result == null) {
@@ -363,7 +367,7 @@ class DisciplCore {
 
   /**
    * Adds a revocation attestation to the channel of the given ssid. Effectively revokes the claim the given link refers to. Subsequent verification of the claim will not succeed.
-   * 
+   *
    * @param {ssid} ssid - The ssid makes the revoke attestation
    * @param {string} link - The link to the claim (or attestation) that should be attested as being revoked. Note that this claim must be in the channel of the given ssid to be effectively seen as revoked.
    * @return {Promise<string>} Link to the attestation
