@@ -30,7 +30,7 @@ class DisciplCore {
    */
   async initializeConnector (connectorName) {
     if (!Object.keys(this.disciplCoreConnectors).includes(connectorName)) {
-      let ConnectorModuleClass = await loadConnector(connectorName)
+      const ConnectorModuleClass = await loadConnector(connectorName)
       this.registerConnector(connectorName, new ConnectorModuleClass())
     }
   }
@@ -53,7 +53,7 @@ class DisciplCore {
    * @returns {Promise<*>} Connector instance that extends from {@link BaseConnector}
    */
   async getConnectorForLinkOrDid (linkOrDid) {
-    let connectorName = BaseConnector.getConnectorName(linkOrDid)
+    const connectorName = BaseConnector.getConnectorName(linkOrDid)
     return this.getConnector(connectorName)
   }
 
@@ -74,7 +74,7 @@ class DisciplCore {
    * @returns {Promise<string>} Did that made the claim
    */
   async getDidOfLinkedClaim (link) {
-    let conn = await this.getConnectorForLinkOrDid(link)
+    const conn = await this.getConnectorForLinkOrDid(link)
     return conn.getDidOfClaim(link)
   }
 
@@ -85,7 +85,7 @@ class DisciplCore {
    * @returns {Promise<{privkey: string, did: string}>} Created ssid
    */
   async newSsid (connectorName) {
-    let conn = await this.getConnector(connectorName)
+    const conn = await this.getConnector(connectorName)
     return conn.newIdentity()
   }
 
@@ -97,7 +97,7 @@ class DisciplCore {
    * @returns {Promise<string>} Link to the made claim
    */
   async claim (ssid, data) {
-    let connector = await this.getConnectorForLinkOrDid(ssid.did)
+    const connector = await this.getConnectorForLinkOrDid(ssid.did)
     return connector.claim(ssid.did, ssid.privkey, data)
   }
 
@@ -111,7 +111,7 @@ class DisciplCore {
    * @returns {Promise<string>} Link to the made attestation
    */
   async attest (ssid, predicate, link) {
-    let attest = {}
+    const attest = {}
     attest[predicate] = link
     return this.claim(ssid, attest)
   }
@@ -148,15 +148,14 @@ class DisciplCore {
    * @returns {Promise<string>} The first did that attested, null if none have
    */
   async verify (predicate, link, dids, verifierSsid = { did: null, privkey: null }) {
-    for (let did of dids) {
+    for (const did of dids) {
       if (typeof did !== 'string') {
         continue
       }
-      let connector = await this.getConnectorForLinkOrDid(did)
-      let attestation = {}
+      const connector = await this.getConnectorForLinkOrDid(did)
+      const attestation = { [predicate]: link }
+      const attestationLink = await connector.verify(did, attestation, verifierSsid.did, verifierSsid.privkey)
 
-      attestation[predicate] = link
-      let attestationLink = await connector.verify(did, attestation, verifierSsid.did, verifierSsid.privkey)
       if (attestationLink) {
         if (await this.verify(REVOKE_PREDICATE, attestationLink, [did]) == null) {
           if (predicate === REVOKE_PREDICATE || await this.verify(REVOKE_PREDICATE, link, [await this.getDidOfLinkedClaim(link)]) == null) {
@@ -177,10 +176,12 @@ class DisciplCore {
    * @return {Promise<{data: object, previous: string}>} Claim data
    */
   async get (link, ssid = null) {
-    let conn = await this.getConnectorForLinkOrDid(link)
+    const conn = await this.getConnectorForLinkOrDid(link)
+
     if (ssid != null) {
       return conn.get(link, ssid.did, ssid.privkey)
     }
+
     return conn.get(link)
   }
 
@@ -199,7 +200,7 @@ class DisciplCore {
       console.warn('Historical observation is deprecated and may be buggy')
     }
     if (connector != null && did == null) {
-      let observeAllResult = await this.observeAll(connector, claimFilter, observerSsid)
+      const observeAllResult = await this.observeAll(connector, claimFilter, observerSsid)
       return new ObserveResult(observeAllResult.observable, observeAllResult.readyPromise)
     }
     if (did == null) {
@@ -207,16 +208,15 @@ class DisciplCore {
     }
 
     connector = await this.getConnectorForLinkOrDid(did)
-    let currentObservableResult = await connector.observe(did, claimFilter, observerSsid.did, observerSsid.privkey)
+    const currentObservableResult = await connector.observe(did, claimFilter, observerSsid.did, observerSsid.privkey)
 
     if (!historical) {
       return new ObserveResult(currentObservableResult.observable, currentObservableResult.readyPromise)
     }
 
-    let historyObservable = Observable.create(async (observer) => {
-      let latestClaim = await connector.getLatestClaim(did)
-
-      let claims = []
+    const historyObservable = Observable.create(async (observer) => {
+      const latestClaim = await connector.getLatestClaim(did)
+      const claims = []
 
       let current = await this.get(latestClaim, observerSsid)
       while (current != null) {
@@ -229,12 +229,12 @@ class DisciplCore {
         }
       }
 
-      for (let claim of claims) {
+      for (const claim of claims) {
         observer.next(claim)
       }
     }).pipe(filter(claim => {
       if (claimFilter != null) {
-        for (let predicate of Object.keys(claimFilter)) {
+        for (const predicate of Object.keys(claimFilter)) {
           if (claim['claim']['data'][predicate] == null) {
             // Predicate not present in claim
             return false
@@ -272,35 +272,34 @@ class DisciplCore {
    * A claim is never exported twice; circulair references are not followed.
    */
   async exportLD (didOrLink, exporterSsid = { did: null, privkey: null }, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) {
-    let isDidBool = BaseConnector.isDid(didOrLink)
-    let isLinkBool = BaseConnector.isLink(didOrLink)
+    const isDidBool = BaseConnector.isDid(didOrLink)
+    const isLinkBool = BaseConnector.isLink(didOrLink)
+    withPrevious = isDidBool ? true : withPrevious
+
     if (!isDidBool && !isLinkBool) {
       return didOrLink
     }
 
-    let connector = await this.getConnectorForLinkOrDid(didOrLink)
-
-    let currentDid = isDidBool ? didOrLink : await connector.getDidOfClaim(didOrLink)
-    let currentLink = isLinkBool ? didOrLink : await connector.getLatestClaim(didOrLink)
-
-    if (isDidBool) {
-      withPrevious = true
-    }
+    const connector = await this.getConnectorForLinkOrDid(didOrLink)
+    const currentDid = isDidBool ? didOrLink : await connector.getDidOfClaim(didOrLink)
+    const currentLink = isLinkBool ? didOrLink : await connector.getLatestClaim(didOrLink)
 
     if (visitedStack.length >= maxdepth) {
       return { didOrLink: MAX_DEPTH_REACHED }
-    } else if (!withPrevious) {
+    }
+
+    if (!withPrevious) {
       visitedStack.push(currentLink)
     }
 
     let channelData = []
 
-    let res = await this.get(currentLink, exporterSsid)
+    const res = await this.get(currentLink, exporterSsid)
     if (res != null) {
-      let data = res.data
+      const data = res.data
 
       if (res.previous && withPrevious) {
-        let prevData = await this.exportLD(res.previous, exporterSsid, maxdepth, currentDid, visitedStack, true)
+        const prevData = await this.exportLD(res.previous, exporterSsid, maxdepth, currentDid, visitedStack, true)
         channelData = prevData[currentDid]
       }
 
@@ -309,10 +308,10 @@ class DisciplCore {
         linkData = []
       }
 
-      for (let elem in data) {
+      for (const elem in data) {
         if (data.hasOwnProperty(elem)) {
-          let value = data[elem]
-          let exportValue = await this.exportLD(value, exporterSsid, maxdepth, ssid, visitedStack, false)
+          const value = data[elem]
+          const exportValue = await this.exportLD(value, exporterSsid, maxdepth, ssid, visitedStack, false)
 
           if (Array.isArray(data)) {
             linkData.push(exportValue)
@@ -332,36 +331,42 @@ class DisciplCore {
    * Imports claims given a dataset as returned by exportLD. Claims linked in the claims are not imported (so max depth = 1)
    * Not all connectors will support this method and its functioning may be platform specific. Some may actually let you
    * create claims in bulk through this import. Others will only check for existence and validate.
+   *
+   * @param {*} data
+   * @param {*} importerDid
+   * @return {boolean}
    */
   async importLD (data, importerDid = null) {
     let succeeded = null
-    for (let did in data) {
+
+    for (const did in data) {
       if (!BaseConnector.isDid(did)) {
         continue
       }
 
-      for (let i in data[did]) {
-        let link = Object.keys(data[did][i])[0]
+      for (const i in data[did]) {
+        const link = Object.keys(data[did][i])[0]
         let claim = data[did][i][link]
-        let predicate = Object.keys(claim)[0]
+        const predicate = Object.keys(claim)[0]
 
-        let res = await this.importLD(claim[predicate], importerDid)
+        const res = await this.importLD(claim[predicate], importerDid)
         if (res != null) {
-          let nestedDid = Object.keys(claim[predicate])[0]
-          let l = Object.keys(claim[predicate][nestedDid][0])[0]
+          const nestedDid = Object.keys(claim[predicate])[0]
+          const l = Object.keys(claim[predicate][nestedDid][0])[0]
           claim = { [predicate]: l }
         }
 
-        let connector = await this.getConnectorForLinkOrDid(did)
+        const connector = await this.getConnectorForLinkOrDid(did)
+        const result = await connector.import(did, link, claim, importerDid)
 
-        let result = await connector.import(did, link, claim, importerDid)
         if (result == null) {
           return null
-        } else {
-          succeeded = true
         }
+
+        succeeded = true
       }
     }
+
     return succeeded
   }
 

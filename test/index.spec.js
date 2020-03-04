@@ -1,4 +1,5 @@
 /* eslint-env mocha */
+/* eslint prefer-const: "off" */
 import { expect } from 'chai'
 import { loadConnector } from '../src/connector-loader.js'
 
