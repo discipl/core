@@ -36,7 +36,7 @@ class DisciplCore {
   }
 
   /**
-   * Returns a instance of the given discipl connector and automaticly lazy loads the corresponding module
+   * Returns a instance of the given discipl connector and automatically lazy loads the corresponding module
    *
    * @param {string} connectorName Name of the connector to load
    * @returns {Promise<*>} Connector instance that extends from {@link BaseConnector}
@@ -82,7 +82,7 @@ class DisciplCore {
    * Generates a new ssid using the specified connector
    *
    * @param {string} connectorName - Name of the connector used
-   * @returns {Promise<{privkey: string, did: string}>} Created ssid
+   * @returns {Promise<ssid>} Created ssid
    */
   async newSsid (connectorName) {
     const conn = await this.getConnector(connectorName)
@@ -126,11 +126,11 @@ class DisciplCore {
   async allow (ssid, scope = null, did = null) {
     const allowConfiguration = {}
     if (scope != null) {
-      allowConfiguration['scope'] = scope
+      allowConfiguration.scope = scope
     }
 
     if (did != null) {
-      allowConfiguration['did'] = did
+      allowConfiguration.did = did
     }
 
     await this.claim(ssid, { [BaseConnector.ALLOW]: allowConfiguration })
@@ -220,7 +220,7 @@ class DisciplCore {
 
       let current = await this.get(latestClaim, observerSsid)
       while (current != null) {
-        claims.unshift({ 'claim': current, 'did': did })
+        claims.unshift({ claim: current, did: did })
 
         if (current.previous) {
           current = await this.get(current.previous, observerSsid)
@@ -235,12 +235,12 @@ class DisciplCore {
     }).pipe(filter(claim => {
       if (claimFilter != null) {
         for (const predicate of Object.keys(claimFilter)) {
-          if (claim['claim']['data'][predicate] == null) {
+          if (claim.claim.data[predicate] == null) {
             // Predicate not present in claim
             return false
           }
 
-          if (claimFilter[predicate] != null && claimFilter[predicate] !== claim['claim']['data'][predicate]) {
+          if (claimFilter[predicate] != null && claimFilter[predicate] !== claim.claim.data[predicate]) {
             // Object is provided in filter, but does not match with actual claim
             return false
           }
