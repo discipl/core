@@ -17,12 +17,14 @@
   "scripts": {
     "prepack": "babel src/ --out-dir dist",
     "test": "nyc --reporter=html --reporter=text ./node_modules/.bin/mocha --require @babel/register ./test/**/*.spec.js",
-    "lint": "./node_modules/standard/bin/cmd.js --parser babel-eslint",
-    "lint-fix": "./node_modules/standard/bin/cmd.js --parser babel-eslint --fix",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && ./node_modules/codecov/bin/codecov"
+    "lint": "./node_modules/standard/bin/cmd.js --parser babel-eslint src/* test/*",
+    "lint-fix": "./node_modules/standard/bin/cmd.js --parser babel-eslint --fix src/* test/*",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && ./node_modules/codecov/bin/codecov",
+    "docs": "./node_modules/jsdoc/jsdoc.js -d docs src/* README.md"
   },
   "dependencies": {
     "@discipl/core-baseconnector": "0.2.1",
+    "jsdoc": "^3.6.3",
     "rxjs": "6.5.2"
   },
   "devDependencies": {

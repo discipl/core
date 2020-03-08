@@ -9,6 +9,7 @@ before_script:
 script:
   - npm run lint
   - npm test
+  - 'npm run docs; if [ ! -z "$(git diff --numstat --minimal | sed '/^[1-]\s\+[1-]\s\+.*/d')" ]; then echo "Documentation out of date"; exit 1; fi'
   - npm audit
   # other script steps might be done before running the actual analysis
 

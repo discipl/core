@@ -8,9 +8,12 @@ const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
 const REVOKE_PREDICATE = 'revoke'
 
 /**
- * @module discipl-core
+ * DisciplCore provides core functionality for the discipl stack
+ *
+ * This includes:
+ * - Connector management: registering and retrieving
+ * - Claim management: Creating, verifying, observing, retrieving, export, import
  */
-
 class DisciplCore {
   constructor () {
     this.disciplCoreConnectors = []
