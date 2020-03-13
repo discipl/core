@@ -6,6 +6,8 @@ import { loadConnector } from '../src/connector-loader.js'
 import sinon from 'sinon'
 import { DisciplCore } from '../src'
 
+import { VerifiablePresentation } from 'vp-toolkit-models'
+
 let discipl
 
 describe('discipl-core', () => {
@@ -258,6 +260,38 @@ describe('discipl-core', () => {
       let exportedData = await discipl.exportLD(attestorSsid.did, attestorSsid)
 
       expect(exportedData[attestorSsid.did][0]).to.deep.equal({ [attestationLink]: { 'agree': { [ssid.did]: [ { [claimlink2]: { 'need': 'wine' } } ] } } })
+    })
+
+    it('should be able to export linked verifiable claim channels given a did as a Verifiable Presentation', async () => {
+      let ssid = await discipl.newSsid('ephemeral')
+      await discipl.claim(ssid, { 'need': 'beer' })
+      let claimlink2 = await discipl.claim(ssid, { 'need': 'wine' })
+
+      await discipl.allow(ssid)
+
+      let attestorSsid = await discipl.newSsid('ephemeral')
+
+      let attestationLink = await discipl.attest(attestorSsid, 'agree', claimlink2)
+      let exportedData = await discipl.exportVP(attestorSsid.did, attestorSsid)
+      let ephemeralVersion = require('../node_modules/@discipl/core-ephemeral/package.json').version
+      let coreVersion = discipl.getVersion()
+
+      expect(exportedData.type[0]).to.equal('VerifiablePresentation')
+      expect(exportedData.verifiableCredential[0].proof['discipl-software-version-info']).to.deep.equal({ 'ephemeral': ephemeralVersion })
+      expect(exportedData.verifiableCredential[1].proof['discipl-software-version-info']).to.deep.equal({ 'ephemeral': ephemeralVersion })
+      expect(exportedData.proof[0]['type']).to.deep.equal('DisciplLink')
+      expect(exportedData.proof[0]['discipl-software-version-info']).to.deep.equal({ 'core': coreVersion })
+      expect(exportedData.verifiableCredential[0].issuer).to.equal(exportedData.verifiableCredential[0].credentialSubject[0].id)
+      expect(exportedData.verifiableCredential[1].issuer).to.equal(exportedData.verifiableCredential[1].credentialSubject[0].id)
+      expect(exportedData.verifiableCredential[0].issuer).to.equal(ssid.did)
+      expect(exportedData.verifiableCredential[1].issuer).to.equal(attestorSsid.did)
+      expect(exportedData.verifiableCredential[1].id).to.equal(attestationLink)
+      expect(exportedData.verifiableCredential[0].id).to.equal(claimlink2)
+      expect(exportedData.verifiableCredential[1].credentialSubject[0].agree).to.equal(claimlink2)
+      expect(exportedData.verifiableCredential[0].credentialSubject[0].need).to.equal('wine')
+
+      // use Rabobank ULA VP toolkit models to test verifiable presentation compatibillity
+      expect(function () { new VerifiablePresentation(exportedData) }).to.not.throw() //eslint-disable-line
     })
 
     it('should be able to export multiple (linked) verifiable claims in a channel in order', async () => {

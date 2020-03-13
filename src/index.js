@@ -3,6 +3,7 @@ import { Observable } from 'rxjs'
 import { concat, filter } from 'rxjs/operators'
 import { BaseConnector } from '@discipl/core-baseconnector'
 import ObserveResult from './observe-result'
+import { version } from '../package.json'
 
 const MAX_DEPTH_REACHED = 'MAX_DEPTH_REACHED'
 const REVOKE_PREDICATE = 'revoke'
@@ -33,6 +34,13 @@ class DisciplCore {
       const ConnectorModuleClass = await loadConnector(connectorName)
       this.registerConnector(connectorName, new ConnectorModuleClass())
     }
+  }
+
+  /**
+   * returns the version of this core package
+   */
+  getVersion () {
+    return version
   }
 
   /**
@@ -325,6 +333,127 @@ class DisciplCore {
     }
 
     return { [currentDid]: channelData }
+  }
+
+  /**
+   * Exports linked claim data as a W3C Verifiable Presentation starting with the claim the given link refers to.
+   * Links contained in the data of the claim are exported also in a value alongside of the link and links in data of those claims are processed in a same way too etc.
+   * By default, expansion like this is done at most three times. You can alter this depth of the export by setting the second argument. If the maximum depth is reached the exported data
+   * will contain the value MAX_DEPTH_REACHED alongside of the link instead of an exported dataset. You can use this method to iteratively expand the dataset using the link that was not followed.
+   * A claim is never exported twice; circulair references are not followed.
+   */
+  async exportVP (didOrLink, exporterSsid = { did: null, privkey: null }, maxdepth = 3, ssid = null, visitedStack = [], withPrevious = false) {
+    const isDidBool = BaseConnector.isDid(didOrLink)
+    const isLinkBool = BaseConnector.isLink(didOrLink)
+    withPrevious = isDidBool ? true : withPrevious
+
+    if (!isDidBool && !isLinkBool) {
+      return didOrLink
+    }
+
+    const connector = await this.getConnectorForLinkOrDid(didOrLink)
+    const currentDid = isDidBool ? didOrLink : await connector.getDidOfClaim(didOrLink)
+    const currentLink = isLinkBool ? didOrLink : await connector.getLatestClaim(didOrLink)
+
+    if (visitedStack.length >= maxdepth) {
+      return { didOrLink: MAX_DEPTH_REACHED }
+    }
+
+    if (!withPrevious) {
+      visitedStack.push(currentLink)
+    }
+
+    let channelData = []
+    let currentConnectorName = 'unknown'
+    let currentConnectorVersion = 'unknown'
+    let createdStamp = new Date().toISOString()
+
+    const res = await this.get(currentLink, exporterSsid)
+    if (res != null) {
+      const data = res.data
+
+      if (res.previous && withPrevious) {
+        channelData = await this.exportVP(res.previous, exporterSsid, maxdepth, currentDid, visitedStack, true)
+      }
+
+      let linkData = {}
+      if (Array.isArray(data)) {
+        linkData = []
+      }
+
+      for (const elem in data) {
+        if (data.hasOwnProperty(elem)) {
+          const value = data[elem]
+          const exportValue = await this.exportVP(value, exporterSsid, maxdepth, ssid, visitedStack, false)
+          let resultValue = null
+
+          if (BaseConnector.isDid(value) || BaseConnector.isLink(value)) {
+            // prepend instead of nest
+            channelData.push(exportValue)
+            resultValue = value
+          } else {
+            resultValue = exportValue
+          }
+          if (Array.isArray(data)) {
+            linkData.push(resultValue)
+          } else {
+            linkData[elem] = resultValue
+          }
+        }
+      }
+
+      if (!(linkData.id)) {
+        linkData.id = currentDid
+      }
+      currentConnectorName = BaseConnector.getConnectorName(currentLink)
+      currentConnectorVersion = require('../node_modules/@discipl/core-' + currentConnectorName + '/package.json').version
+
+      if (visitedStack.length < 1 || isDidBool) {
+        channelData.push({
+          'type': ['verifiableCredential'],
+          'id': currentLink,
+          'issuer': currentDid,
+          'issuanceDate': createdStamp,
+          'credentialSubject': [linkData],
+          'proof': {
+            'type': 'DisciplLink',
+            'created': createdStamp,
+            'verificationMethod': '-',
+            'discipl-software-version-info': { [currentConnectorName]: currentConnectorVersion }
+          }
+        })
+      } else {
+        channelData.push(linkData)
+      }
+    }
+
+    if (visitedStack.length < 1 || isDidBool) {
+      return {
+        '@context': 'https://www.w3.org/2018/credentials/v1',
+        'type': ['VerifiablePresentation'],
+        'verifiableCredential': channelData,
+        'proof': [{
+          'type': 'DisciplLink',
+          'created': createdStamp,
+          'verificationMethod': '-',
+          'discipl-software-version-info': { 'core': this.getVersion() }
+        }]
+      }
+    } else {
+      return {
+        'type': ['verifiableCredential'],
+        'id': currentLink,
+        'issuer': currentDid,
+        'issuanceDate': createdStamp,
+        'credentialSubject': channelData,
+        'proof': {
+          'type': 'DisciplLink',
+          'created': createdStamp,
+          'verificationMethod': '-',
+          'discipl-software-version-info': { [currentConnectorName]: currentConnectorVersion }
+        }
+      }
+    }
   }
 
   /**
