@@ -94,10 +94,16 @@ class DisciplCore {
    *
    * @param {ssid} ssid
    * @param {object} data - Data to be claimed
+   * @param {object} attester - Ssid of the attester, used for access management
    * @returns {Promise<string>} Link to the made claim
    */
-  async claim (ssid, data) {
+  async claim (ssid, data, attester = null) {
     const connector = await this.getConnectorForLinkOrDid(ssid.did)
+
+    if (attester) {
+      return connector.claim(ssid.did, ssid.privkey, data, attester.did)
+    }
+
     return connector.claim(ssid.did, ssid.privkey, data)
   }
 
@@ -273,14 +279,14 @@ class DisciplCore {
    * @param {object} observerSsid - The ssid that is observing, used for access management
    */
   async observeVerificationRequests (did, claimFilter = null, observerSsid = { did: null, privkey: null }) {
-    let connectorName = BaseConnector.getConnectorName(did)
+    const connectorName = BaseConnector.getConnectorName(did)
     const connector = await this.getConnector(connectorName)
 
     if (typeof connector.observeVerificationRequests !== 'function') {
       throw new Error("The 'observeVerificationRequests' method is not supported for the '" + connectorName + "' connector")
     }
 
-    let currentObservableResult = await connector.observeVerificationRequests(did, claimFilter, observerSsid.did, observerSsid.privkey)
+    const currentObservableResult = await connector.observeVerificationRequests(did, claimFilter, observerSsid.did, observerSsid.privkey)
 
     return new ObserveResult(currentObservableResult.observable, currentObservableResult.readyPromise)
   }

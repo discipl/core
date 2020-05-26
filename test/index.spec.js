@@ -381,6 +381,20 @@ describe('discipl-core', () => {
       expect(claimlink).to.equal('link:discipl:mock:claimRef')
     })
 
+    it('should be able to express a claim with a expected attester', async () => {
+      let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      let attester = { did: 'did:discipl:mock:222', privkey: 'SECRET_KEY' }
+      let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
+
+      let stubConnector = { claim: claimStub }
+
+      await discipl.registerConnector('mock', stubConnector)
+      await discipl.claim(ssid, { 'need': 'beer' }, attester)
+
+      expect(claimStub.callCount).to.equal(1)
+      expect(claimStub.calledOnceWith('did:discipl:mock:111', 'SECRET_KEY', { 'need': 'beer' }, 'did:discipl:mock:222')).to.equal(true)
+    })
+
     it('should be able to do an allow claim with a scope', async () => {
       let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
       let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
