@@ -277,13 +277,13 @@ class DisciplCore {
    * @param {object} claimFilter
    * @param {string} claimFilter.did - Filter incomming verification requests on did
    * @param {object} observerSsid - The ssid that is observing, used for access management
+   * @returns {ObserveResult}
    */
   async observeVerificationRequests (did, claimFilter = null, observerSsid = { did: null, privkey: null }) {
-    const connectorName = BaseConnector.getConnectorName(did)
-    const connector = await this.getConnector(connectorName)
+    const connector = await this.getConnectorForLinkOrDid(did)
 
     if (typeof connector.observeVerificationRequests !== 'function') {
-      throw new Error("The 'observeVerificationRequests' method is not supported for the '" + connectorName + "' connector")
+      throw new Error("The 'observeVerificationRequests' method is not supported for the '" + connector.getName() + "' connector")
     }
 
     const currentObservableResult = await connector.observeVerificationRequests(did, claimFilter, observerSsid.did, observerSsid.privkey)

@@ -614,7 +614,7 @@ describe('discipl-core', () => {
 
     it('should throw an error when the "observeVerificationRequests" method is not supported by the connector', async () => {
       const ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
-      await discipl.registerConnector('mock', {})
+      await discipl.registerConnector('mock', { getName: sinon.stub().returns('mock') })
 
       try {
         await discipl.observeVerificationRequests(ssid.did)
