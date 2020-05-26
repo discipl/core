@@ -265,6 +265,27 @@ class DisciplCore {
   }
 
   /**
+   * Observe for verification requests for a given did.
+   *
+   * @param {object} did - Did to observe verification requests for
+   * @param {object} claimFilter
+   * @param {string} claimFilter.did - Filter incomming verification requests on did
+   * @param {object} observerSsid - The ssid that is observing, used for access management
+   */
+  async observeVerificationRequests (did, claimFilter = null, observerSsid = { did: null, privkey: null }) {
+    let connectorName = BaseConnector.getConnectorName(did)
+    const connector = await this.getConnector(connectorName)
+
+    if (typeof connector.observeVerificationRequests !== 'function') {
+      throw new Error("The 'observeVerificationRequests' method is not supported for the '" + connectorName + "' connector")
+    }
+
+    let currentObservableResult = await connector.observeVerificationRequests(did, claimFilter, observerSsid.did, observerSsid.privkey)
+
+    return new ObserveResult(currentObservableResult.observable, currentObservableResult.readyPromise)
+  }
+
+  /**
    * Exports linked claim data starting with the claim the given link refers to.
    * Links contained in the data of the claim are exported also in a value alongside of the link and links in data of those claims are processed in a same way too etc.
    * By default, expansion like this is done at most three times. You can alter this depth of the export by setting the second argument. If the maximum depth is reached the exported data
