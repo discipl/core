@@ -30,7 +30,7 @@ export default class Ipv8DockerUtil {
      */
     static startIpv8Container () {
       return new Promise((resolve, reject) => {
-        exec(`docker build ./test/ipv8 -t ${this.CONTAINER_NAME}:latest`, (err) => {
+        exec('docker build ./test/ipv8 -t ' + this.CONTAINER_NAME + ':latest', (err) => {
           if (err) {
             reject(err)
             return
@@ -38,7 +38,7 @@ export default class Ipv8DockerUtil {
 
           console.log('starting IPv8 container...')
 
-          exec(`docker run --network=host --rm --name ${this.CONTAINER_NAME} -d ${this.CONTAINER_NAME}`, (err, stdout) => {
+          exec('docker run --network=host --rm --name ' + this.CONTAINER_NAME + ' -d ' + this.CONTAINER_NAME, (err, stdout) => {
             if (err) {
               reject(err)
               return
@@ -58,7 +58,7 @@ export default class Ipv8DockerUtil {
       return new Promise((resolve, reject) => {
         console.log('killing IPv8 container...')
 
-        exec(`docker kill ${this.ipv8ContainerId}`, (err) => {
+        exec('docker kill ' + this.ipv8ContainerId, (err) => {
           if (err) {
             reject(err)
             return
