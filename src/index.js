@@ -94,10 +94,16 @@ class DisciplCore {
    *
    * @param {ssid} ssid
    * @param {object} data - Data to be claimed
+   * @param {object} attester - Ssid of the attester, used for access management
    * @returns {Promise<string>} Link to the made claim
    */
-  async claim (ssid, data) {
+  async claim (ssid, data, attester = null) {
     const connector = await this.getConnectorForLinkOrDid(ssid.did)
+
+    if (attester) {
+      return connector.claim(ssid.did, ssid.privkey, data, attester.did)
+    }
+
     return connector.claim(ssid.did, ssid.privkey, data)
   }
 
@@ -262,6 +268,27 @@ class DisciplCore {
    */
   async observeAll (connector, claimFilter, observerSsid) {
     return connector.observe(null, claimFilter, observerSsid.did, observerSsid.privkey)
+  }
+
+  /**
+   * Observe for verification requests for a given did.
+   *
+   * @param {object} did - Did to observe verification requests for
+   * @param {object} claimFilter
+   * @param {string} claimFilter.did - Filter incomming verification requests on did
+   * @param {object} observerSsid - The ssid that is observing, used for access management
+   * @returns {ObserveResult}
+   */
+  async observeVerificationRequests (did, claimFilter = null, observerSsid = { did: null, privkey: null }) {
+    const connector = await this.getConnectorForLinkOrDid(did)
+
+    if (typeof connector.observeVerificationRequests !== 'function') {
+      throw new Error("The 'observeVerificationRequests' method is not supported for the '" + connector.getName() + "' connector")
+    }
+
+    const currentObservableResult = await connector.observeVerificationRequests(did, claimFilter, observerSsid.did, observerSsid.privkey)
+
+    return new ObserveResult(currentObservableResult.observable, currentObservableResult.readyPromise)
   }
 
   /**

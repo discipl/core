@@ -1,10 +1,11 @@
 /* eslint-env mocha */
 /* eslint prefer-const: "off" */
-import { expect } from 'chai'
+import { expect, assert } from 'chai'
 import { loadConnector } from '../src/connector-loader.js'
 
 import sinon from 'sinon'
 import { DisciplCore } from '../src'
+import { Subject } from 'rxjs'
 
 let discipl
 
@@ -380,6 +381,20 @@ describe('discipl-core', () => {
       expect(claimlink).to.equal('link:discipl:mock:claimRef')
     })
 
+    it('should be able to express a claim with a expected attester', async () => {
+      let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      let attester = { did: 'did:discipl:mock:222', privkey: 'SECRET_KEY' }
+      let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
+
+      let stubConnector = { claim: claimStub }
+
+      await discipl.registerConnector('mock', stubConnector)
+      await discipl.claim(ssid, { 'need': 'beer' }, attester)
+
+      expect(claimStub.callCount).to.equal(1)
+      expect(claimStub.calledOnceWith('did:discipl:mock:111', 'SECRET_KEY', { 'need': 'beer' }, 'did:discipl:mock:222')).to.equal(true)
+    })
+
     it('should be able to do an allow claim with a scope', async () => {
       let ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
       let claimStub = sinon.stub().returns('link:discipl:mock:claimRef')
@@ -581,6 +596,33 @@ describe('discipl-core', () => {
 
       expect(verifiedAttestor).to.equal(null)
     })
-  })
-  )
+
+    it('should be able to observe for new verification requests', async () => {
+      const subject = new Subject()
+      const ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      const observeStub = sinon.stub().returns({ observable: subject.asObservable(), readyPromise: Promise.resolve() })
+
+      let stubConnector = { observeVerificationRequests: observeStub }
+
+      await discipl.registerConnector('mock', stubConnector)
+      let observeResult = await discipl.observeVerificationRequests(ssid.did)
+      let resultPromise = observeResult.takeOne()
+      subject.next('claim')
+
+      expect(await resultPromise).to.eq('claim')
+    })
+
+    it('should throw an error when the "observeVerificationRequests" method is not supported by the connector', async () => {
+      const ssid = { did: 'did:discipl:mock:111', privkey: 'SECRET_KEY' }
+      await discipl.registerConnector('mock', { getName: sinon.stub().returns('mock') })
+
+      try {
+        await discipl.observeVerificationRequests(ssid.did)
+        assert.fail()
+      } catch (e) {
+        expect(e).to.be.an('Error')
+        expect(e.message).to.equal("The 'observeVerificationRequests' method is not supported for the 'mock' connector")
+      }
+    })
+  }))
 })
