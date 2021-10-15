@@ -6,6 +6,11 @@ addons:
     organization: "discipl" # the key of the org you chose at step #3
 before_script:
   - git fetch --unshallow
+
+before_install:
+  - docker pull python:3.7-slim
+  - docker build ./test/ipv8 -t ipv8:latest
+
 script:
   - npm run lint
   - npm test
