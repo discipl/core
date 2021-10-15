@@ -417,8 +417,6 @@ class DisciplCore {
           'credentialSubject': [linkData],
           'proof': {
             'type': 'DisciplLink',
-            'created': createdStamp,
-            'verificationMethod': '-',
             'discipl-software-version-info': { [currentConnectorName]: currentConnectorVersion }
           }
         })
@@ -434,8 +432,6 @@ class DisciplCore {
         'verifiableCredential': channelData,
         'proof': [{
           'type': 'DisciplLink',
-          'created': createdStamp,
-          'verificationMethod': '-',
           'discipl-software-version-info': { 'core': this.getVersion() }
         }]
       }
@@ -448,8 +444,6 @@ class DisciplCore {
         'credentialSubject': channelData,
         'proof': {
           'type': 'DisciplLink',
-          'created': createdStamp,
-          'verificationMethod': '-',
           'discipl-software-version-info': { [currentConnectorName]: currentConnectorVersion }
         }
       }
