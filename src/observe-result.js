@@ -1,3 +1,4 @@
+import { lastValueFrom } from 'rxjs';
 import { take, toArray } from 'rxjs/operators'
 
 class ObserveResult {
@@ -7,13 +8,13 @@ class ObserveResult {
   }
 
   async takeOne () {
-    let resultPromise = this._observable.pipe(take(1)).toPromise()
+    let resultPromise = lastValueFrom(this._observable.pipe(take(1)))
     await this._readyPromise
     return resultPromise
   }
 
   async take (amount) {
-    let resultPromise = this._observable.pipe(take(amount)).pipe(toArray()).toPromise()
+    let resultPromise = lastValueFrom(this._observable.pipe(take(amount)).pipe(toArray()))
     await this._readyPromise
     return resultPromise
   }

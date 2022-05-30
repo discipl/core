@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@discipl/core-baseconnector": "0.2.1",
-    "rxjs": "6.5.2"
+    "rxjs": "^7.0.0"
   },
   "devDependencies": {
     "@babel/cli": "7.8.4",
